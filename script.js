@@ -23,7 +23,7 @@ trimButton.addEventListener("click", (event) => {
 
 	// Send an AJAX request to the server to trim the video
 	const xhr = new XMLHttpRequest();
-	xhr.open("POST", "/trim-video");
+	xhr.open("POST", "/trim");
 	xhr.onload = () => {
 		if (xhr.status === 200) {
 			alert("Video trimmed successfully.");

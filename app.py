@@ -1,8 +1,12 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from moviepy.editor import VideoFileClip
 
 
 app = Flask(__name__)
+
+@app.route('/')
+def index():
+    return render_template('index.html')
 
 @app.route('/trim', methods=['POST'])
 def trim_video():
@@ -26,3 +30,6 @@ def trim_video():
 
 if __name__ == '__main__':
     app.run()
+
+if __name__ == '__main__':
+    app.run(debug=True)

@@ -1,6 +1,6 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, render_template
 from moviepy.editor import VideoFileClip
-
+from edit_video import edit_video
 
 app = Flask(__name__)
 
@@ -11,25 +11,11 @@ def index():
 @app.route('/trim', methods=['POST'])
 def trim_video():
     # Get the form data from the request
-    file = request.files['video-file']
-    start_time = float(request.form['start-time'])
-    end_time = float(request.form['end-time'])
+    video_file = request.files.get('video-file')
+    start_time = float(request.form.get('start-time'))
+    end_time = float(request.form.get('end-time'))
 
-    # Save the video file to a temporary location
-    temp_file = 'temp.mp4'
-    file.save(temp_file)
-
-    # Trim the video using MoviePy
-    video = VideoFileClip(temp_file)
-    trimmed_video = video.subclip(start_time, end_time)
-    trimmed_file = 'trimmed.mp4'
-    trimmed_video.write_videofile(trimmed_file)
-
-    # Return the trimmed video file as a response
-    return jsonify({'success': True, 'file': trimmed_file})
+    return edit_video(video_file, start_time, end_time)
 
 if __name__ == '__main__':
     app.run()
-
-if __name__ == '__main__':
-    app.run(debug=True)

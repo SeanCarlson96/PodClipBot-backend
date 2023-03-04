@@ -17,9 +17,10 @@ trimButton.addEventListener("click", (event) => {
 
 	// Create a new FormData object and append the video file and timestamps
 	const formData = new FormData();
-	formData.append("videoFile", videoFile);
-	formData.append("startTime", startTime);
-	formData.append("endTime", endTime);
+	formData.append("video-file", videoFile);
+	formData.append("start-time", startTime);
+	formData.append("end-time", endTime);
+
 
 	// Send an AJAX request to the server to trim the video
 	const xhr = new XMLHttpRequest();

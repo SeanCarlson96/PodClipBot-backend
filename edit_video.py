@@ -1,14 +1,7 @@
-from flask import abort, jsonify
+from flask import jsonify
 from moviepy.editor import *
-import numpy as np
 
 def edit_video(video_file, start_time, end_time):
-
-    # Check if the required fields are filled
-    if not video_file:
-        abort(400, 'No file uploaded')
-    if start_time < 0 or end_time < 0 or start_time > end_time:
-        abort(400, 'Invalid start or end time')
     
     # Save the video file to a temporary location
     temp_file = 'temp.mp4'
@@ -18,8 +11,23 @@ def edit_video(video_file, start_time, end_time):
     video = VideoFileClip(temp_file)
 
     # Crop the video to a 16:9 aspect ratio and center on the subject
-    video = video.crop(x1=0.15*video.w, y1=0.15*video.h, x2=0.85*video.w, y2=0.85*video.h)
-    video = video.resize(width=1280)
+    # video = video.crop(x1=0.15*video.w, y1=0.15*video.h, x2=0.85*video.w, y2=0.85*video.h)
+    # video = video.resize(width=1280)
+
+    # Crop the video to a 9:16 aspect ratio and 1920x1080 resolution
+    target_width = 1080*9//16
+    if video.w/video.h > target_width/1080:
+        new_width = int(target_width)
+        new_height = int(video.h * target_width / video.w)
+    else:
+        new_width = int(video.w * 1080 / video.h)
+        new_height = 1080
+    x1 = (new_width - target_width) // 2
+    x2 = x1 + target_width
+    y1 = 0
+    y2 = 1080
+    video = video.crop(x1=x1, y1=y1, x2=x2, y2=y2)
+    video = video.resize(width=1920)
 
     # Add subtitles
     txt_clip = TextClip("Hello, world!", fontsize=50, color='white')

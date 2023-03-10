@@ -1,31 +1,35 @@
+import os
 import speech_recognition as sr
-import pysrt
-from moviepy.video.tools.subtitles import SubtitlesClip
-from moviepy.editor import VideoFileClip, AudioFileClip
+from moviepy.editor import *
 
 def add_subtitles(video):
-    # Extract audio from the video
-    audio_filename = video.audio.filename
-    audio = AudioFileClip(audio_filename)
-    
-    # Use speech recognition to generate subtitles
+
+    # Extract the audio from the video
+    audio = video.audio
+    audio_filename = os.path.splitext(video.filename)[0] + '.wav'
+    audio.write_audiofile(audio_filename)
+
+    # Set the duration of the audio file to match the video
+    audio.duration = video.duration
+
+    # Initialize the recognizer
     recognizer = sr.Recognizer()
-    with audio.write_audiofile("temp_audio.wav", fps=44100) as wav_file:
-        recognizer.adjust_for_ambient_noise(audio)
-        audio_file = sr.AudioFile("temp_audio.wav")
-        transcript = recognizer.recognize_google(audio_file)
-    
-    # Create the SubRip file object for the subtitles
-    subtitle_file = pysrt.SubRipFile()
-    subtitle_file.append(pysrt.SubRipItem(
-        index=1,
-        start=pysrt.SubRipTime(0, 0, 0),
-        end=pysrt.SubRipTime(0, 0, 5),
-        text=transcript
-    ))
-    
-    # Create the SubtitlesClip object and add it to the video clip
-    subtitles = SubtitlesClip(subtitle_file)
-    video_with_subtitles = video.set_audio(None).set_duration(subtitles.duration).set_fps(30).set_audio(subtitles)
-    
+
+    # Transcribe the audio using Google Speech Recognition
+    with sr.AudioFile(audio_filename) as source:
+        audio_data = recognizer.record(source)
+        subtitles_text = recognizer.recognize_google(audio_data)
+
+    # Create the subtitle clip
+    subtitles = TextClip(subtitles_text, fontsize=100, color='yellow').set_position(('center', 'center'))
+
+    # Add the subtitles to the video
+    video_with_subtitles = CompositeVideoClip([video, subtitles])
+
+    # Write the video with subtitles to a new file
+    video_with_subtitles_file = os.path.splitext(video.filename)[0] + '_subtitled.mp4'
+    video_with_subtitles.duration = video.duration
+    video_with_subtitles.write_videofile(video_with_subtitles_file)
+
+    # Return the resulting video clip with subtitles
     return video_with_subtitles

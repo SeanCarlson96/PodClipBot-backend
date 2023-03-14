@@ -3,6 +3,7 @@ from moviepy.editor import *
 
 from center_and_crop import center_and_crop
 from speech_to_subtitles import add_subtitles
+# from speech_to_subtitles_works import add_subtitles
 
 def edit_video(video_file, start_time, end_time):
     

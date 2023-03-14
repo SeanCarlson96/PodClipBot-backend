@@ -1,25 +1,3 @@
-# This file must be used with "source bin/activate.csh" *from csh*.
-# You cannot run it directly.
-# Created by Davide Di Blasi <davidedb@gmail.com>.
-# Ported to Python 3.3 venv by Andrew Svetlov <andrew.svetlov@gmail.com>
-
-alias deactivate 'test $?_OLD_VIRTUAL_PATH != 0 && setenv PATH "$_OLD_VIRTUAL_PATH" && unset _OLD_VIRTUAL_PATH; rehash; test $?_OLD_VIRTUAL_PROMPT != 0 && set prompt="$_OLD_VIRTUAL_PROMPT" && unset _OLD_VIRTUAL_PROMPT; unsetenv VIRTUAL_ENV; test "\!:*" != "nondestructive" && unalias deactivate'
-
-# Unset irrelevant variables.
-deactivate nondestructive
-
-setenv VIRTUAL_ENV "/Users/seancarlson/Operation Automated Shorts/myenv"
-
-set _OLD_VIRTUAL_PATH="$PATH"
-setenv PATH "$VIRTUAL_ENV/bin:$PATH"
-
-
-set _OLD_VIRTUAL_PROMPT="$prompt"
-
-if (! "$?VIRTUAL_ENV_DISABLE_PROMPT") then
-    set prompt = "(myenv) $prompt"
-endif
-
-alias pydoc python -m pydoc
-
-rehash
+version https://git-lfs.github.com/spec/v1
+oid sha256:50b99f70061e368bd6f94b52048de1ff2e66d00e6b2e0fa734089f6db340b4ca
+size 876

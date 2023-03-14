@@ -1,10 +1,3 @@
-#!/bin/sh
-'''exec' "/Users/seancarlson/Operation Automated Shorts/myenv/bin/python3" "$0" "$@"
-' '''
-# -*- coding: utf-8 -*-
-import re
-import sys
-from imageio.__main__ import download_bin_main
-if __name__ == '__main__':
-    sys.argv[0] = re.sub(r'(-script\.pyw|\.exe)?$', '', sys.argv[0])
-    sys.exit(download_bin_main())
+version https://git-lfs.github.com/spec/v1
+oid sha256:34363246964addcd280c8f54cb62fd3f92c1dcd2581db40865f1f9340c6c769c
+size 323

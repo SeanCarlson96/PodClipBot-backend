@@ -1,12 +1,3 @@
-import cv2
-
-# face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
-
-def find_face_center(frame, face_cascade):
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
-    if len(faces) > 0:
-        (x, y, w, h) = faces[0]
-        return (x + w/2, y + h/2)
-    else:
-        return None
+version https://git-lfs.github.com/spec/v1
+oid sha256:1185a76e2560e2d227f4220917c1250f30639ce53b6bc0c6e97d9109716b119f
+size 403

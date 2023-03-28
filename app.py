@@ -1,3 +1,20 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:e0c13a406e9ed12e25f97fa1eec17e3ee4a83fba193dec1613e69622cfde755a
-size 570
+from flask import Flask, request, render_template
+from edit_video import edit_video
+
+app = Flask(__name__)
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/trim', methods=['POST'])
+def trim_video():
+    # Get the form data from the request
+    video_file = request.files.get('video-file')
+    start_time = float(request.form.get('start-time'))
+    end_time = float(request.form.get('end-time'))
+
+    return edit_video(video_file, start_time, end_time)
+
+if __name__ == '__main__':
+    app.run()

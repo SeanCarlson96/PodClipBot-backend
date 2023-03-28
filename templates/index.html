@@ -1,3 +1,20 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:fbe78dfd851af014cab5c51d96d3ef1e1a5e76f943875340344c6fb65cab9996
-size 760
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Video Trimmer</title>
+	<link rel="stylesheet" type="text/css" href="../static/style.css">
+</head>
+<body>
+	<h1>Video Trimmerrrrr</h1>
+	<form id="trim-form" method="POST" action="/trim" enctype="multipart/form-data">
+		<label for="video-file">Select a video file:</label>
+		<input type="file" id="video-file" name="video-file"><br><br>
+		<label for="start-time">Start time (in seconds):</label>
+		<input type="text" id="start-time" name="start-time"><br><br>
+		<label for="end-time">End time (in seconds):</label>
+		<input type="text" id="end-time" name="end-time"><br><br>
+		<button type="submit" id="trim-button">Trim Video</button>
+	</form>
+	<script type="text/javascript" src="../static/script.js"></script>
+</body>
+</html>

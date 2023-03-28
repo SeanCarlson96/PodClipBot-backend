@@ -1,3 +1,44 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:dd429d36ca840ba0084576faf136de76e09e3d4367ca35024bcc7c4193e2b5df
-size 445
+1
+0:00:00,101 --> 0:00:01,027
+you know, climbing it
+
+5
+0:00:01,208 --> 0:00:01,792
+in the same style
+
+9
+0:00:01,813 --> 0:00:02,195
+that I was going
+
+13
+0:00:02,215 --> 0:00:02,820
+to climb with Alex,
+
+17
+0:00:02,900 --> 0:00:03,643
+Simon climbing it,
+
+20
+0:00:03,743 --> 0:00:04,848
+but still placing more
+
+24
+0:00:04,888 --> 0:00:05,651
+gear and then
+
+27
+0:00:06,153 --> 0:00:07,036
+during my try this
+
+31
+0:00:07,057 --> 0:00:08,343
+year I actually told
+
+35
+0:00:08,504 --> 0:00:09,229
+Alex because he
+
+38
+0:00:09,269 --> 0:00:10,538
+was he's definitely him.
+

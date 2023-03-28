@@ -3,10 +3,6 @@ from edit_video import edit_video
 
 app = Flask(__name__)
 
-@app.route('/')
-def index():
-    return render_template('index.html')
-
 @app.route('/trim', methods=['POST'])
 def trim_video():
     # Get the form data from the request

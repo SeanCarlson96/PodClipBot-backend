@@ -21,7 +21,7 @@ def edit_video(video_file, start_time, end_time):
     # Center and crop to 9:16
     video = center_and_crop(video)
 
-    # Use speech recognition to create subtitles, and add them to the video
+    # Use whisperx to create subtitles, and add them to the video
     video = add_subtitles(video)
 
     # Add watermark image overlay
@@ -32,7 +32,7 @@ def edit_video(video_file, start_time, end_time):
 
     # Write edited video to the file name
     trimmed_file = 'trimmed.mp4'
-    video.write_videofile(os.path.join('uploads', trimmed_file))
+    video.write_videofile(os.path.join('uploads', trimmed_file), codec='libx264', audio_codec='aac')
 
     # Return the trimmed video file as a response
     return trimmed_file

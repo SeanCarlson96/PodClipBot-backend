@@ -9,6 +9,10 @@ from flask_jwt_extended import JWTManager, get_jwt_identity
 from models import User
 from flask_jwt_extended import create_access_token
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
+print("MONGODB_HOST:", os.environ["MONGODB_HOST"])
 
 
 app = Flask(__name__)
@@ -50,7 +54,7 @@ def progress():
 def register():
     data = request.get_json()
     password_hash = bcrypt.generate_password_hash(data['password']).decode('utf-8')
-    user = User(email=data['email'], username=data['username'], password_hash=password_hash)
+    user = User(email=data['email'], username=data['username'], password_hash=password_hash, subscription='none')
     user.save()
     return jsonify({"message": "User registered successfully."}), 201
 
@@ -60,7 +64,13 @@ def login():
     user = User.objects.get(email=data['email'])
     if user and bcrypt.check_password_hash(user.password_hash, data['password']):
         access_token = create_access_token(identity=str(user.id))
-        return jsonify({"access_token": access_token}), 200
+        user_data = {
+                        "id": str(user.id),
+                        "email": user.email,
+                        "username": user.username,
+                        "subscription": user.subscription,
+                    }
+        return jsonify({"access_token": access_token, "user": user_data}), 200
     else:
         return jsonify({"message": "Invalid email or password."}), 401
 

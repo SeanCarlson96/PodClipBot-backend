@@ -63,8 +63,6 @@ def trim_video():
     return jsonify({'success': True, 'files': output_filenames})
 
 
-
-
 @app.route('/uploads/<filename>', methods=['GET'])
 def serve_file(filename):
     response = make_response(send_from_directory('uploads', filename))

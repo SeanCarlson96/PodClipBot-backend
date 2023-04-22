@@ -12,8 +12,6 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
-print("MONGODB_HOST:", os.environ["MONGODB_HOST"])
-
 
 app = Flask(__name__)
 CORS(app)
@@ -26,13 +24,45 @@ bcrypt = Bcrypt(app)
 app.config["JWT_SECRET_KEY"] = os.environ["JWT_SECRET_KEY"]
 jwt = JWTManager(app)
 
+# @app.route('/trim', methods=['POST'])
+# def trim_video():
+#     def convert_to_seconds(timestamp):
+#         hours, minutes, seconds = map(int, timestamp.split(':'))
+#         return hours * 3600 + minutes * 60 + seconds
+
+#     video_file = request.files.get('video-file')
+#     start_time = convert_to_seconds(request.form.get('start-time'))
+#     end_time = convert_to_seconds(request.form.get('end-time'))
+#     output_filename = edit_video(video_file, start_time, end_time)
+#     return jsonify({'success': True, 'file': output_filename})
+
 @app.route('/trim', methods=['POST'])
 def trim_video():
+    def convert_to_seconds(timestamp):
+        hours, minutes, seconds = map(int, timestamp.split(':'))
+        return hours * 3600 + minutes * 60 + seconds
+
     video_file = request.files.get('video-file')
-    start_time = float(request.form.get('start-time'))
-    end_time = float(request.form.get('end-time'))
-    output_filename = edit_video(video_file, start_time, end_time)
-    return jsonify({'success': True, 'file': output_filename})
+    output_filenames = []
+
+    # Save the video file to a temporary location to ensure readability
+    temp_file = 'temp.mp4'
+    video_file.save(temp_file)
+
+    # Get all keys in the form data that start with 'start-time-'
+    start_time_keys = [key for key in request.form.keys() if key.startswith('start-time-')]
+
+    # Loop over the start time keys and extract the corresponding start and end times
+    for start_time_key in start_time_keys:
+        clip_number = start_time_key.split('-')[-1]
+        start_time = convert_to_seconds(request.form.get(start_time_key))
+        end_time = convert_to_seconds(request.form.get(f'end-time-{clip_number}'))
+        output_filename = edit_video(temp_file, start_time, end_time, clip_number)
+        output_filenames.append(output_filename)
+
+    return jsonify({'success': True, 'files': output_filenames})
+
+
 
 
 @app.route('/uploads/<filename>', methods=['GET'])

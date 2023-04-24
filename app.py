@@ -24,18 +24,6 @@ bcrypt = Bcrypt(app)
 app.config["JWT_SECRET_KEY"] = os.environ["JWT_SECRET_KEY"]
 jwt = JWTManager(app)
 
-# @app.route('/trim', methods=['POST'])
-# def trim_video():
-#     def convert_to_seconds(timestamp):
-#         hours, minutes, seconds = map(int, timestamp.split(':'))
-#         return hours * 3600 + minutes * 60 + seconds
-
-#     video_file = request.files.get('video-file')
-#     start_time = convert_to_seconds(request.form.get('start-time'))
-#     end_time = convert_to_seconds(request.form.get('end-time'))
-#     output_filename = edit_video(video_file, start_time, end_time)
-#     return jsonify({'success': True, 'file': output_filename})
-
 @app.route('/trim', methods=['POST'])
 def trim_video():
     def convert_to_seconds(timestamp):

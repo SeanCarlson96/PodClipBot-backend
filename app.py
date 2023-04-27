@@ -12,7 +12,15 @@ import os
 from dotenv import load_dotenv
 from flask_socketio import SocketIO
 # from edit_video import edit_video
-from edit_video_2 import edit_video_with_socketio
+from edit_video_2 import edit_video_with_socketio, cancel_processing, clip_cancel_flags
+# import socketio
+import logging
+
+logging.getLogger('werkzeug').setLevel(logging.ERROR)
+logging.getLogger('socketio').setLevel(logging.ERROR)
+logging.getLogger('engineio').setLevel(logging.ERROR)
+
+
 
 load_dotenv()
 
@@ -27,6 +35,17 @@ db = MongoEngine(app)
 bcrypt = Bcrypt(app)
 app.config["JWT_SECRET_KEY"] = os.environ["JWT_SECRET_KEY"]
 jwt = JWTManager(app)
+
+# @socketio.on('cancel_processing')
+# def handle_cancel_processing(clip_number):
+#     cancel_processing(clip_number, socketio)
+
+@socketio.on('cancel_processing')
+def handle_cancel_processing(data):
+    clip_name = data['clipName']
+    print(f"Canceling clip {clip_name}")
+    socketio.emit('video_processing_progress', {'progress': 0})
+    cancel_processing(clip_name, socketio)
 
 @app.route('/trim', methods=['POST'])
 def trim_video():
@@ -52,6 +71,9 @@ def trim_video():
         # output_filename = edit_video(temp_file, start_time, end_time, clip_number)
         output_filename = edit_video_with_socketio(temp_file, start_time, end_time, clip_number, socketio)
         output_filenames.append(output_filename)
+
+    # Clear the clip_cancel_flags dictionary
+    clip_cancel_flags.clear()
 
     return jsonify({'success': True, 'files': output_filenames})
 

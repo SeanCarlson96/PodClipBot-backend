@@ -4,7 +4,10 @@ from auth_decorator import jwt_required
 import time
 from flask_mongoengine import MongoEngine
 from flask_bcrypt import Bcrypt
-from flask_jwt_extended import JWTManager, get_jwt_identity
+from flask_jwt_extended import decode_token, JWTManager
+from jwt.exceptions import PyJWTError
+from jwt import decode
+
 from models import User
 from flask_jwt_extended import create_access_token
 import os
@@ -123,10 +126,10 @@ def protected_route():
     return jsonify({"message": f"Welcome, {user.username}!"})
 
 # Configure Flask-Mail (use your own email settings)
-app.config['MAIL_SERVER'] = 'smtp.example.com'
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'your-email@example.com'
+app.config['MAIL_USERNAME'] = 'carlsonseanr@example.com'
 app.config['MAIL_PASSWORD'] = 'your-email-password'
 mail = Mail(app)
 
@@ -141,24 +144,18 @@ def forgot_password():
         return jsonify({"error": "Email not found"}), 404
 
     # Generate a reset token
-    token = jwt.encode(
-        {
-            'user_id': str(user.id),
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
-        },
-        'your-secret-key',
-        algorithm='HS256'
-    )
+    token = create_access_token(identity=str(user.id), expires_delta=datetime.timedelta(hours=1))
 
     # Send a password reset email
-    reset_url = f'http://your-frontend-url/reset-password?token={token}'
+    reset_url = f'http://localhost:3000/reset-password?token={token}'
     msg = Message(
         'Password Reset Request',
         sender='noreply@example.com',
         recipients=[email]
     )
     msg.body = f'To reset your password, visit the following link: {reset_url}\n\nIf you did not request a password reset, please ignore this email.'
-    mail.send(msg)
+    # mail.send(msg) -- Commented out to prevent sending emails during development
+    print(msg.body)
 
     return jsonify({"message": "Password reset email sent"}), 200
 
@@ -172,26 +169,22 @@ def reset_password():
         return jsonify({"error": "Missing token or password"}), 400
 
     try:
-        # Decode the token
-        payload = jwt.decode(token, 'your-secret-key', algorithms=['HS256'])
+        decoded_token = decode(token, app.config['JWT_SECRET_KEY'], algorithms=['HS256'])
+        user_id = decoded_token['sub']
+        user = User.objects(id=user_id).first()
 
-        # Check if the user exists in the database
-        user = User.objects(id=payload['user_id']).first()
         if not user:
             return jsonify({"error": "User not found"}), 404
 
-        # Update the user's password
+        # Update the password
+        password_hash = bcrypt.generate_password_hash(new_password).decode('utf-8')
+        User.objects(id=user_id).update_one(set__password_hash=password_hash)
 
-        hashed_password = bcrypt.generate_password_hash(data['password']).decode('utf-8')
-        user.update(password_hash=hashed_password)
 
-        return jsonify({"message": "Password reset successfully"}), 200
+        return jsonify({"message": "Password updated successfully"}), 200
 
-    except jwt.ExpiredSignatureError:
-        return jsonify({"error": "Token expired"}), 401
-    except jwt.InvalidTokenError:
-        return jsonify({"error": "Invalid token"}), 401
-
+    except PyJWTError:
+        return jsonify({"error": "Invalid or expired token"}), 401
 
 if __name__ == '__main__':
     socketio.run(app)

@@ -43,5 +43,5 @@ class MyBarLogger(ProgressBarLogger):
                 self.progress_bar.close()
             self.socketio.emit("video_processing_progress", {"progress": 0})
             raise CancelProcessingException(
-                f"Clip {self.clip_name} processing was canceled by user."
+                f"{self.clip_name} processing was canceled during logger."
             )

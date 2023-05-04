@@ -15,7 +15,7 @@ clip_cancel_flags = {}
 def edit_video_with_socketio(temp_file, start_time, end_time, clip_number, socketio):
 
     clip_name = "Clip " + str(clip_number)
-    
+
     print('cancel flags: ' + str(clip_cancel_flags))
 
     if clip_cancel_flags.get(clip_name):
@@ -23,8 +23,8 @@ def edit_video_with_socketio(temp_file, start_time, end_time, clip_number, socke
         return
 
     print('Editing: ' + clip_name)
-    # print('start: ' + str(start_time))
-    # print('end: ' + str(end_time))
+    print('start: ' + str(start_time))
+    print('end: ' + str(end_time))
     # print('video: ' + str(video_file))
 
     socketio.emit('current_clip_in_edit', {'name': clip_name})

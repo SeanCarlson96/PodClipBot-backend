@@ -4,10 +4,9 @@ from auth_decorator import jwt_required
 import time
 from flask_mongoengine import MongoEngine
 from flask_bcrypt import Bcrypt
-from flask_jwt_extended import decode_token, JWTManager
+from flask_jwt_extended import decode_token, JWTManager, get_jwt_identity
 from jwt.exceptions import PyJWTError
 from jwt import decode
-
 from models import User
 from flask_jwt_extended import create_access_token
 import os
@@ -51,7 +50,7 @@ def trim_video():
         return hours * 3600 + minutes * 60 + seconds
 
     video_file = request.files.get('video-file')
-    output_filenames = []
+    # output_filenames = []
 
     # Save the video file to a temporary location to ensure readability
     temp_file = 'temp.mp4'
@@ -67,12 +66,12 @@ def trim_video():
         end_time = convert_to_seconds(request.form.get(f'end-time-{clip_number}'))
         # output_filename = edit_video(temp_file, start_time, end_time, clip_number)
         output_filename = edit_video_with_socketio(temp_file, start_time, end_time, clip_number, socketio)
-        output_filenames.append(output_filename)
+        # output_filenames.append(output_filename)
 
     # Clear the clip_cancel_flags dictionary
     clip_cancel_flags.clear()
 
-    return jsonify({'success': True, 'files': output_filenames})
+    return jsonify({'success': True, 'message': 'Clip construction completed'})
 
 @app.route('/uploads/<filename>', methods=['GET'])
 def serve_file(filename):

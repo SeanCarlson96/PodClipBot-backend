@@ -65,7 +65,8 @@ def trim_video():
         start_time = convert_to_seconds(request.form.get(start_time_key))
         end_time = convert_to_seconds(request.form.get(f'end-time-{clip_number}'))
         # output_filename = edit_video(temp_file, start_time, end_time, clip_number)
-        output_filename = edit_video_with_socketio(temp_file, start_time, end_time, clip_number, socketio)
+        # output_filename = edit_video_with_socketio(temp_file, start_time, end_time, clip_number, socketio)
+        edit_video_with_socketio(temp_file, start_time, end_time, clip_number, socketio)
         # output_filenames.append(output_filename)
 
     # Clear the clip_cancel_flags dictionary

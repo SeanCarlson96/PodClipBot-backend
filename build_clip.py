@@ -1,0 +1,98 @@
+from pprint import pprint
+from moviepy.editor import *
+
+from center_and_crop import center_and_crop
+# from whisperx_to_subtitles import add_subtitles
+from add_subtitles import add_subtitles
+from add_background_music import add_background_music
+from add_watermark import add_watermark
+import os
+from custom_logger import CancelProcessingException, MyBarLogger
+
+__all__ = ['clip_cancel_flags']
+
+clip_cancel_flags = {}
+
+def convert_to_seconds(timestamp):
+    hours, minutes, seconds = map(int, timestamp.split(':'))
+    return hours * 3600 + minutes * 60 + seconds
+
+def check_for_cancel(clip_name, socketio):
+    global clip_cancel_flags
+    if clip_cancel_flags.get(clip_name):
+        socketio.emit('processing_canceled', {'clipName': clip_name})
+        return True
+    return False
+
+def cancel_processing(clip_name, socketio_instance):
+    print(clip_name + ' canceled')
+    global clip_cancel_flags
+    clip_cancel_flags[clip_name] = True
+    socketio_instance.emit('processing_canceled', {'clipName': clip_name})
+
+def build_clip(temp_file, start_time, end_time, clip_number, socketio, clip_info):
+    clip_name = "Clip " + str(clip_number)
+    if check_for_cancel(clip_name, socketio):
+        return
+    socketio.emit('current_clip_in_edit', {'name': clip_name})
+    # Trim the video using MoviePy
+    video = VideoFileClip(temp_file)
+    start_time = convert_to_seconds(start_time)
+    end_time = convert_to_seconds(end_time)
+    video = video.subclip(start_time, end_time)
+    if check_for_cancel(clip_name, socketio):
+        return
+    # Center and crop to 9:16
+    video = center_and_crop(video)
+    if check_for_cancel(clip_name, socketio):
+        return
+    print(start_time, end_time)
+    pprint(clip_info)
+
+
+    # Extract the audio from the video
+    audio = video.audio
+    audio_filename = os.path.splitext(video.filename)[0] + '.wav'
+    audio.write_audiofile(audio_filename)
+
+    if clip_info.get('subtitlesToggle') == 'on':
+        # Use whisperx to create subtitles, and add them to the video
+        video = add_subtitles(video, audio_filename, clip_info)
+        if check_for_cancel(clip_name, socketio):
+            return
+
+    
+    # Add watermark image overlay, send clip_info for logic inside function
+    video = add_watermark(video, clip_info)
+    if check_for_cancel(clip_name, socketio):
+        return
+
+
+    if clip_info.get('musicToggle') == 'on':
+        # Add background music
+        video = add_background_music(video, clip_info)
+        if check_for_cancel(clip_name, socketio):
+            return
+
+
+
+
+    # Write edited video to the file name
+    trimmed_file = 'clip' + clip_number + '.mp4'
+    my_bar_logger = MyBarLogger(socketio, clip_cancel_flags, clip_name)
+    try:
+        video.write_videofile(
+            os.path.join('uploads', trimmed_file),
+            codec='libx264',
+            audio_codec='aac',
+            logger=my_bar_logger
+        )
+    except CancelProcessingException as e:
+        print(str(e))
+        socketio.emit('processing_canceled', {'clipName': clip_name})
+        return
+    if check_for_cancel(clip_name, socketio):
+        return
+    socketio.emit('video_file_ready', {'filename': trimmed_file, 'name': clip_name})
+    print(clip_number + ' emitted')
+    return trimmed_file

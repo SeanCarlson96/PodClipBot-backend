@@ -6,12 +6,7 @@ from moviepy.video.tools.subtitles import SubtitlesClip
 from moviepy.video.compositing.CompositeVideoClip import CompositeVideoClip
 from srt_format_timestamp import srt_format_timestamp
 
-def add_subtitles(video):
-
-    # Extract the audio from the video
-    audio = video.audio
-    audio_filename = os.path.splitext(video.filename)[0] + '.wav'
-    audio.write_audiofile(audio_filename)
+def add_subtitles(video, audio_filename):
 
     device = "cpu"
 
@@ -80,10 +75,10 @@ def add_subtitles(video):
                                     txt, 
                                     font='Helvetica-BoldOblique', 
                                     fontsize=150, 
-                                    color="rgb(111,68,68)", 
-                                    bg_color="rgb(200,30,30)", 
-                                    stroke_width=5, 
-                                    stroke_color="rgb(30,200,171)", 
+                                    color="white", 
+                                    bg_color="black", 
+                                    stroke_width=1, 
+                                    stroke_color="black", 
                                     method='label', 
                                     )
     subtitle_clip = SubtitlesClip(srt_filename, generator).set_position(('center',0.66), relative=True)

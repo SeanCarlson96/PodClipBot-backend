@@ -4,7 +4,7 @@ import tempfile
 from moviepy.editor import *
 from pydub import AudioSegment
 
-def add_background_music(video):
+def add_background_music(video, clip_info):
     music_folder = "music"
     music_files = [os.path.join(music_folder, f) for f in os.listdir(music_folder) if f.endswith(".mp3")]
 
@@ -13,11 +13,17 @@ def add_background_music(video):
     music = AudioSegment.from_mp3(music_file)
     video_audio = AudioSegment.from_file("temp.wav")
 
+    # Get volume value from clip_info and calculate volume adjustment
+    volume_value = int(clip_info.get('volume', 50))
+    default_volume = 50
+    volume_adjustment = (volume_value - default_volume) / (100 - default_volume) * 9
+
     # Adjust the volumes
-    # video_audio = video_audio - 6  # Reduce video audio volume by 6 dB
-    music = music - 6             # Increase music volume by 4 dB
+    music = music + volume_adjustment - 6
 
     # Set the music duration to match the video's duration
+    # video_duration_ms = video.duration * 1000
+    # music = music[:video_duration_ms]
     music = music[:video.duration * 1000]
 
     # Add fade in and fade out effects to the background music

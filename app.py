@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, send_from_directory, make_response, Response
+from flask import Flask, jsonify, request, send_file, send_from_directory, make_response, Response
 from flask_cors import CORS
 from auth_decorator import jwt_required
 import time
@@ -13,10 +13,13 @@ import os
 from dotenv import load_dotenv
 from flask_socketio import SocketIO
 # from edit_video import edit_video
-from edit_video_2 import edit_video_with_socketio, cancel_processing, clip_cancel_flags
+# from edit_video_2 import edit_video_with_socketio, cancel_processing, clip_cancel_flags
 import logging
 from flask_mail import Mail, Message
 import datetime
+from build_clip import build_clip, cancel_processing, clip_cancel_flags
+from partial_content import partial_content_handler
+from moviepy.editor import TextClip
 
 logging.getLogger('werkzeug').setLevel(logging.ERROR)
 logging.getLogger('socketio').setLevel(logging.ERROR)
@@ -45,41 +48,93 @@ def handle_cancel_processing(data):
 
 @app.route('/trim', methods=['POST'])
 def trim_video():
-    def convert_to_seconds(timestamp):
-        hours, minutes, seconds = map(int, timestamp.split(':'))
-        return hours * 3600 + minutes * 60 + seconds
+    try:
+        video_file = request.files.get('video-file')
 
-    video_file = request.files.get('video-file')
-    # output_filenames = []
+        temp_file = 'temp.mp4'
+        video_file.save(temp_file)
 
-    # Save the video file to a temporary location to ensure readability
-    temp_file = 'temp.mp4'
-    video_file.save(temp_file)
+        # Convert request.form into a regular dictionary, excluding start and end time data
+        clip_info = {key: value for key, value in request.form.items() if not key.startswith(('start-time-', 'end-time-'))}
 
-    # Get all keys in the form data that start with 'start-time-'
-    start_time_keys = [key for key in request.form.keys() if key.startswith('start-time-')]
+        # Get all keys in the form data that start with 'start-time-'
+        start_time_keys = [key for key in request.form.keys() if key.startswith('start-time-')]
 
-    # Loop over the start time keys and extract the corresponding start and end times
-    for index, start_time_key in enumerate(start_time_keys):
-        clip_number = start_time_key.split('-')[-1]
-        start_time = convert_to_seconds(request.form.get(start_time_key))
-        end_time = convert_to_seconds(request.form.get(f'end-time-{clip_number}'))
-        # output_filename = edit_video(temp_file, start_time, end_time, clip_number)
-        # output_filename = edit_video_with_socketio(temp_file, start_time, end_time, clip_number, socketio)
-        edit_video_with_socketio(temp_file, start_time, end_time, clip_number, socketio)
-        # output_filenames.append(output_filename)
+        # Loop over the start time keys and extract the corresponding start and end times
+        for index, start_time_key in enumerate(start_time_keys):
+            clip_number = start_time_key.split('-')[-1]
+            start_time = request.form.get(start_time_key)
+            end_time = request.form.get(f'end-time-{clip_number}')
 
-    # Clear the clip_cancel_flags dictionary
-    clip_cancel_flags.clear()
+            build_clip(temp_file, start_time, end_time, clip_number, socketio, clip_info)
 
-    return jsonify({'success': True, 'message': 'Clip construction completed'})
+        clip_cancel_flags.clear()
+        return jsonify({'success': True, 'message': '/trim completed all clips'})
+
+    except Exception as e:
+        # Return an error message to the front end
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+
+# @app.route('/trim', methods=['POST'])
+# def trim_video():
+#     def convert_to_seconds(timestamp):
+#         hours, minutes, seconds = map(int, timestamp.split(':'))
+#         return hours * 3600 + minutes * 60 + seconds
+
+#     video_file = request.files.get('video-file')
+#     # output_filenames = []
+#     print(request.form)
+
+#     # Save the video file to a temporary location to ensure readability
+#     temp_file = 'temp.mp4'
+#     video_file.save(temp_file)
+
+#     # Get all keys in the form data that start with 'start-time-'
+#     start_time_keys = [key for key in request.form.keys() if key.startswith('start-time-')]
+
+#     # Loop over the start time keys and extract the corresponding start and end times
+#     for index, start_time_key in enumerate(start_time_keys):
+#         clip_number = start_time_key.split('-')[-1]
+#         start_time = convert_to_seconds(request.form.get(start_time_key))
+#         end_time = convert_to_seconds(request.form.get(f'end-time-{clip_number}'))
+#         # output_filename = edit_video(temp_file, start_time, end_time, clip_number)
+#         # output_filename = edit_video_with_socketio(temp_file, start_time, end_time, clip_number, socketio)
+#         edit_video_with_socketio(temp_file, start_time, end_time, clip_number, socketio)
+#         # output_filenames.append(output_filename)
+
+#     # Clear the clip_cancel_flags dictionary
+#     clip_cancel_flags.clear()
+
+#     return jsonify({'success': True, 'message': 'Clip construction completed'})
+
+# @app.route('/uploads/<filename>', methods=['GET'])
+# def serve_file(filename):
+#     video_file_path = os.path.join('uploads', filename)
+#     range_header = request.headers.get('Range', None)
+    
+#     if range_header:
+#         return partial_content_handler(video_file_path, range_header)
+#     else:
+#         response = send_file(video_file_path, conditional=True)
+#         response.headers['Content-Disposition'] = f'attachment; filename={filename}'
+#         response.headers['Content-Type'] = 'video/mp4'
+#         return response
+
+# @app.route('/uploads/<filename>', methods=['GET'])
+# def serve_file(filename):
+#     response = make_response(send_from_directory('uploads', filename))
+#     response.headers['Content-Disposition'] = f'attachment; filename={filename}'
+#     response.headers['Content-Type'] = 'video/mp4'
+#     return response
 
 @app.route('/uploads/<filename>', methods=['GET'])
 def serve_file(filename):
     response = make_response(send_from_directory('uploads', filename))
     response.headers['Content-Disposition'] = f'attachment; filename={filename}'
     response.headers['Content-Type'] = 'video/mp4'
+    response.headers['Cache-Control'] = 'no-store'  # Add this line
     return response
+
 
 @app.route('/progress')
 def progress():
@@ -185,6 +240,11 @@ def reset_password():
 
     except PyJWTError:
         return jsonify({"error": "Invalid or expired token"}), 401
+
+@app.route('/api/fonts', methods=['GET'])
+def get_fonts():
+    fonts = TextClip.list('font')
+    return jsonify(fonts)
 
 if __name__ == '__main__':
     socketio.run(app)

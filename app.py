@@ -52,10 +52,19 @@ def trim_video():
         video_file = request.files.get('video-file')
 
         temp_file = 'temp.mp4'
-        video_file.save(temp_file)
-
+        video_file.save(temp_file)        
+        
         # Convert request.form into a regular dictionary, excluding start and end time data
         clip_info = {key: value for key, value in request.form.items() if not key.startswith(('start-time-', 'end-time-'))}
+
+
+        music_file = request.files.get('music-file')
+        if music_file:
+            music_temp_file = 'temp_music.mp3'
+            music_file.save(music_temp_file)
+            clip_info['music_file_path'] = music_temp_file
+
+
 
         # Get all keys in the form data that start with 'start-time-'
         start_time_keys = [key for key in request.form.keys() if key.startswith('start-time-')]

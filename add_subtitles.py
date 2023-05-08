@@ -12,12 +12,17 @@ def add_subtitles(video, audio_filename, clip_info):
     font = clip_info.get('font', 'Arial')  # Set the default value if 'font' is not found
     font_size = 10 * int(clip_info.get('fontSize', '15'))  # Convert the value to an integer and set the default value
     subtitle_color = clip_info.get('subtitleColor', '#ffffff')  # Set the default value
-    # subtitle_background_toggle = clip_info.get('subtitleBackground', 'off')  # Set the default value
-    background_color = clip_info.get('subtitleBackgroundColor', 'black') if clip_info.get('subtitleBackground', 'off') == 'true' else 'transparent'
 
-    device = "cpu"
+    # Get the subtitleBackground value, return 'off' if it doesn't exist
+    subtitle_background = clip_info.get('subtitleBackgroundToggle', 'off')
+    # Get the subtitleBackgroundColor value, return 'black' if it doesn't exist and subtitleBackground is 'true'
+    subtitle_background_color = clip_info.get('subtitleBackgroundColor', 'black') if subtitle_background == 'true' else None
+    # Set background_color to subtitleBackgroundColor value if it exists, otherwise set it to 'transparent'
+    background_color = subtitle_background_color if subtitle_background_color else 'transparent'
+
 
     # Get transcription segments using whisper
+    device = "cpu"
     model = whisperx.load_model("tiny", device)
     result = model.transcribe(audio_filename)
     # segments = result['segments']

@@ -7,8 +7,14 @@ from pydub import AudioSegment
 def add_background_music(video, clip_info):
     music_folder = "music"
     music_files = [os.path.join(music_folder, f) for f in os.listdir(music_folder) if f.endswith(".mp3")]
+    # Add this line right below the line where music_files is defined
+    music_choice = clip_info.get('musicChoice', 'random')
 
-    music_file = random.choice(music_files)
+    # Replace the line where music_file is defined with the following lines
+    if music_choice == 'random' or not music_choice:
+        music_file = random.choice(music_files)
+    else:
+        music_file = os.path.join(music_folder, music_choice)
 
     music = AudioSegment.from_mp3(music_file)
     video_audio = AudioSegment.from_file("temp.wav")

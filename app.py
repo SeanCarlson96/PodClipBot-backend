@@ -135,6 +135,14 @@ def serve_file(filename):
     response.headers['Cache-Control'] = 'no-store'  # Add this line
     return response
 
+@app.route('/api/music_files', methods=['GET'])
+def get_music_files():
+    music_directory = 'music'
+    music_files = os.listdir(music_directory)
+    return jsonify(music_files)
+@app.route('/api/music/<path:filename>', methods=['GET'])
+def get_music_file(filename):
+    return send_from_directory('music', filename)
 
 @app.route('/progress')
 def progress():

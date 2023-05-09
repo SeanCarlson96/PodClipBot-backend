@@ -80,7 +80,8 @@ def add_subtitles(video, audio_filename, clip_info):
             if len(textsegment) == 0:
                 startTime = srt_format_timestamp(segment['start'])
                 segmentId = idx+1
-            if len(textsegment) < 10:
+            # if len(textsegment) < 10:
+            if len(textsegment) < segment_length:
                 if wordnumber == 1:
                     textsegment = currentword
                 else:

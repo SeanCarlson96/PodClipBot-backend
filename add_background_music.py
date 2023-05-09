@@ -35,7 +35,8 @@ def add_background_music(video, clip_info):
     music = music[:video.duration * 1000]
 
     # Add fade in and fade out effects to the background music
-    music = music.fade_in(1500).fade_out(1500)
+    if fade_in_and_out == 'on':
+        music = music.fade_in(1500).fade_out(1500)
 
     # Combine the audio tracks
     combined_audio = video_audio.overlay(music)

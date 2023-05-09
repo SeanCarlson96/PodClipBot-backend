@@ -25,7 +25,7 @@ def add_subtitles(video, audio_filename, clip_info):
     position_horizontal = clip_info.get('subtitlePositionHorizontal', 'center')
     position_vertical = ((100 - int(clip_info.get('subtitlePositionVertical', '35'))) / 100)
     # whisperx_model = clip_info.get('whisperXModel', 'tiny')
-    segment_length = clip_info.get('subtitleSegmentLength', '10')
+    segment_length = int(clip_info.get('subtitleSegmentLength', '10'))
     diarization = clip_info.get('diarizationToggle', 'off')
     
     # Get transcription segments using whisper

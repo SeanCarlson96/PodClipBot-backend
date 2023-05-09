@@ -11,14 +11,17 @@ def add_background_music(video, clip_info):
 
     volume_value = int(clip_info.get('volume', 50))
     music_choice = clip_info.get('musicChoice', 'random')
-    custom_upload = clip_info.get('music-file', None)
+    custom_upload = clip_info.get('music_file_path', None)
     fade_in_and_out = clip_info.get('musicFade', 'on')
-    music_duration = clip_info.get('musicDuration', 'full')
+    music_duration = int(clip_info.get('musicDuration', 100))
 
-    if music_choice == 'random' or not music_choice:
-        music_file = random.choice(music_files)
+    if custom_upload:
+        music_file = custom_upload
     else:
-        music_file = os.path.join(music_folder, music_choice)
+        if music_choice == 'random' or not music_choice:
+            music_file = random.choice(music_files)
+        else:
+            music_file = os.path.join(music_folder, music_choice)
 
     music = AudioSegment.from_mp3(music_file)
     video_audio = AudioSegment.from_file("temp.wav")
@@ -30,9 +33,10 @@ def add_background_music(video, clip_info):
     music = music + volume_adjustment - 6
 
     # Set the music duration to match the video's duration
-    # video_duration_ms = video.duration * 1000
-    # music = music[:video_duration_ms]
-    music = music[:video.duration * 1000]
+    # music = music[:video.duration * 1000]
+    # Assuming music_duration is an integer between 0 and 100
+    percentage_duration = (music_duration / 100.0) * video.duration
+    music = music[:int(percentage_duration * 1000)]
 
     # Add fade in and fade out effects to the background music
     if fade_in_and_out == 'on':

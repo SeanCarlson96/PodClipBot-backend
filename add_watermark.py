@@ -10,11 +10,18 @@ def add_watermark(video, clip_info):
     else:
         video = CompositeVideoClip([video])
         return video
+    
+    position = clip_info.get('watermarkPosition')
+    custom_upload = clip_info.get('watermark-file', None)
+    size = clip_info.get('watermarkSize')
+    opacity = clip_info.get('watermarkOpacity')
+    duration = clip_info.get('watermarkDuration')
 
     # Add the watermark image overlay
     watermark = ImageClip(watermark_path)
     watermark = watermark.set_opacity(0.9).resize(height=190)
-    watermark = watermark.set_pos(lambda t: ('center', video.size[1] * 0.75 - watermark.size[1] / 2))
+    # watermark = watermark.set_pos(lambda t: ('center', video.size[1] * 0.75 - watermark.size[1] / 2))
+    watermark = watermark.set_pos(lambda t: ('center', 0.85))
     video = CompositeVideoClip([video, watermark.set_duration(video.duration)])
 
     return video

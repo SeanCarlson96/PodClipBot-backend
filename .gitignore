@@ -1,4 +1,6 @@
-myenv/
+# whisperx folder is my virtual envrionment
+whisperx/
+
 uploads/
 
 final_videoTEMP_MPY_wvf_snd.mp3
@@ -7,6 +9,8 @@ temp.srt
 temp.wav
 test_outputTEMP_MPY_wvf_snd.mp3
 trimmed.mp4
+temp_music.mp3
+temp_watermark.png
 
 .env
 

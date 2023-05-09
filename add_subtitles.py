@@ -1,5 +1,8 @@
 import os
+import pprint
+import traceback
 import whisperx
+import gc 
 from moviepy.editor import TextClip
 from moviepy.editor import *
 from moviepy.video.tools.subtitles import SubtitlesClip
@@ -8,32 +11,59 @@ from srt_format_timestamp import srt_format_timestamp
 
 def add_subtitles(video, audio_filename, clip_info):
 
-    # subtitles_toggle = clip_info.get('subtitlesToggle', 'off')  # Set the default value
-    font = clip_info.get('font', 'Arial')  # Set the default value if 'font' is not found
-    font_size = 10 * int(clip_info.get('fontSize', '15'))  # Convert the value to an integer and set the default value
-    subtitle_color = clip_info.get('subtitleColor', '#ffffff')  # Set the default value
-
-    # Get the subtitleBackground value, return 'off' if it doesn't exist
+    font = clip_info.get('font', 'Arial')
+    font_size = 10 * int(clip_info.get('fontSize', '15'))
+    subtitle_color = clip_info.get('subtitleColor', '#ffffff')
     subtitle_background = clip_info.get('subtitleBackgroundToggle', 'off')
-    # Get the subtitleBackgroundColor value, return 'black' if it doesn't exist and subtitleBackground is 'true'
     subtitle_background_color = clip_info.get('subtitleBackgroundColor', 'black') if subtitle_background == 'true' else None
-    # Set background_color to subtitleBackgroundColor value if it exists, otherwise set it to 'transparent'
     background_color = subtitle_background_color if subtitle_background_color else 'transparent'
 
-
+    font_stroke_width = int(clip_info.get('strokeWidth', '0'))
+    font_stroke_color = clip_info.get('strokeColor', 'black')
+    if font_stroke_width == 0:
+        font_stroke_color = None
+    position_horizontal = clip_info.get('subtitlePositionHorizontal', 'center')
+    position_vertical = ((100 - int(clip_info.get('subtitlePositionVertical', '35'))) / 100)
+    # whisperx_model = clip_info.get('whisperXModel', 'tiny')
+    segment_length = clip_info.get('subtitleSegmentLength', '10')
+    diarization = clip_info.get('diarizationToggle', 'off')
+    
     # Get transcription segments using whisper
     device = "cpu"
-    model = whisperx.load_model("tiny", device)
-    result = model.transcribe(audio_filename)
+    audio_file = audio_filename
+    batch_size = 16 # reduce if low on GPU mem
+    compute_type = "int8" #try changing to float16 after development
+
+    # model = whisperx.load_model("large-v2", device, compute_type=compute_type)
+    model = whisperx.load_model("large-v2", device, compute_type=compute_type, language='en')
+
+    audio = whisperx.load_audio(audio_file)
+    result = model.transcribe(audio, batch_size=batch_size)
     # segments = result['segments']
 
     # load alignment model and metadata
     model_a, metadata = whisperx.load_align_model(language_code=result["language"], device=device)
 
     # align whisper output
-    result_aligned = whisperx.align(result["segments"], model_a, metadata, audio_filename, device)
-
+    result_aligned = whisperx.align(result["segments"], model_a, metadata, audio, device, return_char_alignments=False)
+    
     segments = result_aligned['word_segments']
+    # pprint(result_aligned)
+
+
+    # hf_token = os.environ["HF_TOKEN"]
+    # # 3. Assign speaker labels
+    # diarize_model = whisperx.DiarizationPipeline(use_auth_token=hf_token, device=device)
+
+    # # add min/max number of speakers if known
+    # diarize_segments = diarize_model(audio_file)
+    # # diarize_model(audio_file, min_speakers=min_speakers, max_speakers=max_speakers)
+
+    # result = whisperx.assign_word_speakers(diarize_segments, result)
+    # pprint(diarize_segments)
+    # pprint(result["segments"]) # segments are now assigned speaker IDs
+
+
 
     # Clear the contents of the .srt file
     srt_filename = os.path.splitext(video.filename)[0] + '.srt'
@@ -45,7 +75,7 @@ def add_subtitles(video, audio_filename, clip_info):
         textsegment = ''
         wordnumber = 1
         for idx, segment in enumerate(segments):
-            currentword = segment['text']
+            currentword = segment['word']
             # build textsegments up to a specific character count. set at 10 right now
             if len(textsegment) == 0:
                 startTime = srt_format_timestamp(segment['start'])
@@ -89,12 +119,11 @@ def add_subtitles(video, audio_filename, clip_info):
                                     fontsize=font_size, 
                                     color=subtitle_color, 
                                     bg_color=background_color, 
-                                    stroke_width=0, 
-                                    stroke_color=None, 
+                                    stroke_width=font_stroke_width, 
+                                    stroke_color=font_stroke_color, 
                                     method='label', 
                                     )
-    subtitle_clip = SubtitlesClip(srt_filename, generator).set_position(('center',0.66), relative=True)
-
+    subtitle_clip = SubtitlesClip(srt_filename, generator).set_position((position_horizontal,position_vertical), relative=True)
 
     # Add the subtitles to the video
     video_with_subtitles = CompositeVideoClip([video, subtitle_clip.set_duration(video.duration)])

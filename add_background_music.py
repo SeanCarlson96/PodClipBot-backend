@@ -7,10 +7,14 @@ from pydub import AudioSegment
 def add_background_music(video, clip_info):
     music_folder = "music"
     music_files = [os.path.join(music_folder, f) for f in os.listdir(music_folder) if f.endswith(".mp3")]
-    # Add this line right below the line where music_files is defined
-    music_choice = clip_info.get('musicChoice', 'random')
+    
 
-    # Replace the line where music_file is defined with the following lines
+    volume_value = int(clip_info.get('volume', 50))
+    music_choice = clip_info.get('musicChoice', 'random')
+    custom_upload = clip_info.get('music-file', None)
+    fade_in_and_out = clip_info.get('musicFade', 'on')
+    music_duration = clip_info.get('musicDuration', 'full')
+
     if music_choice == 'random' or not music_choice:
         music_file = random.choice(music_files)
     else:
@@ -19,11 +23,9 @@ def add_background_music(video, clip_info):
     music = AudioSegment.from_mp3(music_file)
     video_audio = AudioSegment.from_file("temp.wav")
 
-    # Get volume value from clip_info and calculate volume adjustment
-    volume_value = int(clip_info.get('volume', 50))
+
     default_volume = 50
     volume_adjustment = (volume_value - default_volume) / (100 - default_volume) * 9
-
     # Adjust the volumes
     music = music + volume_adjustment - 6
 

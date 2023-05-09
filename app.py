@@ -64,6 +64,11 @@ def trim_video():
             music_file.save(music_temp_file)
             clip_info['music_file_path'] = music_temp_file
 
+        watermark_file = request.files.get('watermark-file')
+        if watermark_file:
+            watermark_temp_file = 'temp_watermark.png'
+            watermark_file.save(watermark_temp_file)
+            clip_info['watermark_file_path'] = watermark_temp_file
 
 
         # Get all keys in the form data that start with 'start-time-'

@@ -12,7 +12,7 @@ def add_background_music(video, clip_info):
     volume_value = int(clip_info.get('volume', 50))
     music_choice = clip_info.get('musicChoice', 'random')
     custom_upload = clip_info.get('music_file_path', None)
-    fade_in_and_out = clip_info.get('musicFade', 'on')
+    fade_in_and_out = clip_info.get('musicFade')
     music_duration = int(clip_info.get('musicDuration', 100))
 
     if custom_upload:
@@ -39,7 +39,9 @@ def add_background_music(video, clip_info):
     music = music[:int(percentage_duration * 1000)]
 
     # Add fade in and fade out effects to the background music
-    if fade_in_and_out == 'on':
+    if fade_in_and_out:
+        print('fading in and out')
+        print(fade_in_and_out)
         music = music.fade_in(1500).fade_out(1500)
 
     # Combine the audio tracks

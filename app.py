@@ -1,3 +1,4 @@
+import traceback
 from flask import Flask, jsonify, request, send_file, send_from_directory, make_response, Response
 from flask_cors import CORS
 from auth_decorator import jwt_required
@@ -85,9 +86,13 @@ def trim_video():
         clip_cancel_flags.clear()
         return jsonify({'success': True, 'message': '/trim completed all clips'})
 
+    # except Exception as e:
+    #     # Return an error message to the front end
+    #     return jsonify({'success': False, 'message': f'Error: {str(e)}'})
     except Exception as e:
-        # Return an error message to the front end
-        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+        tb = traceback.format_exc()
+        error_line = tb.split("\n")[-2]
+        return jsonify({'success': False, 'message': f'Error: {str(e)}', 'detail': tb, 'error_line': error_line})
 
 # @app.route('/trim', methods=['POST'])
 # def trim_video():

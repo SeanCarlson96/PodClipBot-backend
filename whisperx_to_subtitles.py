@@ -6,7 +6,7 @@ from moviepy.video.tools.subtitles import SubtitlesClip
 from moviepy.video.compositing.CompositeVideoClip import CompositeVideoClip
 from srt_format_timestamp import srt_format_timestamp
 
-def add_subtitles(video, audio_filename):
+def add_wx_subtitles(video, audio_filename):
 
     device = "cpu"
 
@@ -22,7 +22,8 @@ def add_subtitles(video, audio_filename):
     result_aligned = whisperx.align(result["segments"], model_a, metadata, audio_filename, device)
 
     segments = result_aligned['word_segments']
-
+    print('og segments')
+    print(segments)
     # Clear the contents of the .srt file
     srt_filename = os.path.splitext(video.filename)[0] + '.srt'
     with open(srt_filename, 'w', encoding='utf-8') as srtFile:

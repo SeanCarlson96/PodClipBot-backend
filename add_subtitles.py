@@ -48,10 +48,11 @@ def add_subtitles(video, audio_filename, clip_info):
     # load alignment model and metadata
     model_a, metadata = whisperx.load_align_model(language_code=result["language"], device=device)
     # align whisper output
-    result_align = whisperx.align(result["segments"], model_a, metadata, audio, device, return_char_alignments=True)
+    # result_align = whisperx.align(result["segments"], model_a, metadata, audio, device, return_char_alignments=True)
+    result_aligned = whisperx.align(result["segments"], model_a, metadata, audio, device, return_char_alignments=False)
 
 
-    result_aligned = adjust_word_timestamps(result_align) # hopefully temporary solution until Max Bain gets back to my email? we will see
+    # result_aligned = adjust_word_timestamps(result_align) # hopefully temporary solution until Max Bain gets back to my email? we will see
     # print(result_aligned)
 
 
@@ -94,7 +95,7 @@ def add_subtitles(video, audio_filename, clip_info):
                         # as is
                         nextSegment = segments[idx+1]
                         timeBetweenWords = nextSegment['start'] - segment['end']
-                        if timeBetweenWords > 0.5:
+                        if timeBetweenWords > 0.3:
                             endTime = srt_format_timestamp(segment['end'])
                             segment = f"{segmentId}\n{startTime} --> {endTime}\n{textsegment}\n\n"
                             srtFile.write(segment)

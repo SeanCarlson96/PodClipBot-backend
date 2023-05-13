@@ -20,6 +20,27 @@ def create_subtitle_clip(srt_filename, color, font, font_size, background_color,
     subtitle_clip = SubtitlesClip(srt_filename, generator).set_position((position_horizontal,position_vertical), relative=True)
     return subtitle_clip.set_duration(video.duration)
 
+def assign_speaker(words):
+    last_speaker = None
+
+    # First pass: from start to end
+    for word in words:
+        if "speaker" in word:
+            last_speaker = word["speaker"]
+        elif last_speaker is not None:
+            word["speaker"] = last_speaker
+
+    # Second pass: from end to start
+    last_speaker = None
+    for word in reversed(words):
+        if "speaker" in word:
+            last_speaker = word["speaker"]
+        elif last_speaker is not None:
+            word["speaker"] = last_speaker
+
+    return words
+
+
 def diarized_subtitles(clip_info, device, audio_file, result_aligned, segment_length, video, font, font_size, subtitle_color, background_color, font_stroke_width, font_stroke_color, position_horizontal, position_vertical):
     hf_token = os.environ["HF_TOKEN"]
     diarize_model = whisperx.DiarizationPipeline(use_auth_token=hf_token, device=device)
@@ -28,6 +49,7 @@ def diarized_subtitles(clip_info, device, audio_file, result_aligned, segment_le
     segments = result['word_segments']
     # print(result)
 
+    segments = assign_speaker(segments)
     print(segments)
 
     srt_files = glob.glob('*.srt')

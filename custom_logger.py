@@ -18,6 +18,7 @@ class MyBarLogger(ProgressBarLogger):
         self.clip_name = clip_name
         self.progress_bar = None
 
+
     def callback(self, **changes):
         try:
             index = self.state["bars"]["t"]["index"]
@@ -32,7 +33,11 @@ class MyBarLogger(ProgressBarLogger):
                 self.progress_bar = tqdm(total=total, unit="frame", desc=self.clip_name)
 
             self.progress_bar.update(index - self.progress_bar.n)
-            self.socketio.emit("video_processing_progress", {"progress": percent_complete})
+
+            adjusted_percent_complete = percent_complete / 1.42857142857 + 30
+
+            # self.socketio.emit("video_processing_progress", {"progress": percent_complete})
+            self.socketio.emit("video_processing_progress", {"progress": adjusted_percent_complete})
         except KeyError as e:
             pass
 

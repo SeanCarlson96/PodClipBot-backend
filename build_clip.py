@@ -3,7 +3,7 @@ from moviepy.editor import *
 
 from center_and_crop import center_and_crop
 # from whisperx_to_subtitles import add_subtitles
-from add_subtitles import add_subtitles
+from add_subtitles import add_subtitles, send_progress_update
 from add_background_music import add_background_music
 from add_watermark import add_watermark
 import os
@@ -47,8 +47,7 @@ def build_clip(temp_file, start_time, end_time, clip_number, socketio, clip_info
     if check_for_cancel(clip_name, socketio):
         return
     print(start_time, end_time)
-    pprint(clip_info)
-
+    # pprint(clip_info)
 
     # Extract the audio from the video
     audio = video.audio
@@ -57,7 +56,7 @@ def build_clip(temp_file, start_time, end_time, clip_number, socketio, clip_info
 
     if clip_info.get('subtitlesToggle') == 'on':
         # Use whisperx to create subtitles, and add them to the video
-        video = add_subtitles(video, audio_filename, clip_info)
+        video = add_subtitles(video, audio_filename, clip_info, socketio)
         if check_for_cancel(clip_name, socketio):
             return
 
@@ -75,11 +74,10 @@ def build_clip(temp_file, start_time, end_time, clip_number, socketio, clip_info
             return
 
 
-
-
     # Write edited video to the file name
     trimmed_file = 'clip' + clip_number + '.mp4'
     my_bar_logger = MyBarLogger(socketio, clip_cancel_flags, clip_name)
+    socketio.emit('build_action', {'action': 'Writing'})
     try:
         video.write_videofile(
             os.path.join('uploads', trimmed_file),

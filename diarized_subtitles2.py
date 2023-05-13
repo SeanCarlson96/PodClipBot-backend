@@ -40,17 +40,22 @@ def assign_speaker(words):
 
     return words
 
-
-def diarized_subtitles(clip_info, device, audio_file, result_aligned, segment_length, video, font, font_size, subtitle_color, background_color, font_stroke_width, font_stroke_color, position_horizontal, position_vertical):
+def diarized_subtitles(socketio, clip_info, device, audio_file, result_aligned, segment_length, video, font, font_size, subtitle_color, background_color, font_stroke_width, font_stroke_color, position_horizontal, position_vertical):
     hf_token = os.environ["HF_TOKEN"]
+
+    socketio.emit('video_processing_progress', {'progress': 21})
+
     diarize_model = whisperx.DiarizationPipeline(use_auth_token=hf_token, device=device)
     diarize_segments = diarize_model(audio_file) # this is the line that takes a long time
+
+    socketio.emit('video_processing_progress', {'progress': 30})
+
     result = whisperx.assign_word_speakers(diarize_segments, result_aligned)
     segments = result['word_segments']
     # print(result)
 
     segments = assign_speaker(segments)
-    print(segments)
+    # print(segments)
 
     srt_files = glob.glob('*.srt')
     for srt_filename in srt_files:
@@ -146,12 +151,15 @@ def diarized_subtitles(clip_info, device, audio_file, result_aligned, segment_le
         #             wordnumber = 1
 
     second_speaker_color = clip_info.get('secondSpeakerColor', 'yellow')
+    third_speaker_color = clip_info.get('thirdSpeakerColor', 'blue')
+    fourth_speaker_color = clip_info.get('fourthSpeakerColor', 'green')
+    fifth_speaker_color = clip_info.get('fifthSpeakerColor', 'red')
     speaker_colors = {
         'SPEAKER_00': subtitle_color,
         'SPEAKER_01': second_speaker_color,
-        'SPEAKER_02': 'blue',
-        'SPEAKER_03': 'green',
-        'SPEAKER_04': 'red',
+        'SPEAKER_02': third_speaker_color,
+        'SPEAKER_03': fourth_speaker_color,
+        'SPEAKER_04': fifth_speaker_color,
         'SPEAKER_05': 'pink',
     }
     clips = [video]

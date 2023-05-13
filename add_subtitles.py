@@ -13,7 +13,12 @@ from srt_format_timestamp import srt_format_timestamp
 from diarized_subtitles2 import diarized_subtitles
 from adjust_word_timestamps import adjust_word_timestamps
 
-def add_subtitles(video, audio_filename, clip_info):
+def send_progress_update(socketio, progress):
+    socketio.emit('video_processing_progress', {'progress': progress})
+
+def add_subtitles(video, audio_filename, clip_info, socketio):
+
+    send_progress_update(socketio, 3)
 
     font = clip_info.get('font', 'Arial')
     font_size = 10 * int(clip_info.get('fontSize', '15'))
@@ -32,6 +37,7 @@ def add_subtitles(video, audio_filename, clip_info):
     segment_length = int(clip_info.get('subtitleSegmentLength', '10'))
     diarization = clip_info.get('diarizationToggle')
     
+    send_progress_update(socketio, 6)
     # Get transcription segments using whisper
     device = "cpu"
     audio_file = audio_filename
@@ -39,14 +45,19 @@ def add_subtitles(video, audio_filename, clip_info):
     compute_type = "int8" #try changing to float16 after development
 
     # model = whisperx.load_model("large-v2", device, compute_type=compute_type)
-    print('before whisperx.load_model')
+    
+    send_progress_update(socketio, 9)
     model = whisperx.load_model("large-v2", device, compute_type=compute_type, language='en')
-    print('after whisperx.load_model')
+    
+    send_progress_update(socketio, 12)
+    # print('after whisperx.load_model')
     audio = whisperx.load_audio(audio_file)
     result = model.transcribe(audio, batch_size=batch_size)
     # print(result)
     # load alignment model and metadata
     model_a, metadata = whisperx.load_align_model(language_code=result["language"], device=device)
+
+    send_progress_update(socketio, 15)
     # align whisper output
     # result_align = whisperx.align(result["segments"], model_a, metadata, audio, device, return_char_alignments=True)
     result_aligned = whisperx.align(result["segments"], model_a, metadata, audio, device, return_char_alignments=False)
@@ -56,8 +67,11 @@ def add_subtitles(video, audio_filename, clip_info):
     # print(result_aligned)
 
 
+    send_progress_update(socketio, 18)
+
     if diarization:
-        video_with_subtitles = diarized_subtitles(clip_info, device, audio_file, result_aligned, segment_length, video, font, font_size, subtitle_color, background_color, font_stroke_width, font_stroke_color, position_horizontal, position_vertical)
+        socketio.emit('build_action', {'action': 'Diarizing'})
+        video_with_subtitles = diarized_subtitles(socketio, clip_info, device, audio_file, result_aligned, segment_length, video, font, font_size, subtitle_color, background_color, font_stroke_width, font_stroke_color, position_horizontal, position_vertical)
     else:
         segments = result_aligned['word_segments']
         print('not diarized')
@@ -125,6 +139,4 @@ def add_subtitles(video, audio_filename, clip_info):
         # Add the subtitles to the video
         video_with_subtitles = CompositeVideoClip([video, subtitle_clip.set_duration(video.duration)])
 
-
-    print('add subtitles complete')
     return video_with_subtitles

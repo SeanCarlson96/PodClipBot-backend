@@ -1,3 +1,4 @@
+import glob
 import traceback
 from flask import Flask, jsonify, request, send_from_directory, make_response, Response
 from flask_cors import CORS
@@ -8,6 +9,8 @@ from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, get_jwt_identity
 from jwt.exceptions import PyJWTError
 from jwt import decode
+from file_security_functions.safe_image_file import safe_watermark_file
+from file_security_functions.safe_music_file import safe_music_file
 from models import User
 from flask_jwt_extended import create_access_token
 import os
@@ -18,6 +21,7 @@ from flask_mail import Mail, Message
 import datetime
 from functions.build_clip import build_clip, cancel_processing, clip_cancel_flags
 from moviepy.editor import TextClip
+from file_security_functions.safe_video_file import safe_video_file
 
 logging.getLogger('werkzeug').setLevel(logging.ERROR)
 logging.getLogger('socketio').setLevel(logging.ERROR)
@@ -46,8 +50,13 @@ def handle_cancel_processing(data):
 
 @app.route('/trim', methods=['POST'])
 def trim_video():
+    temp_file = None
     try:
         video_file = request.files.get('video-file')
+
+        is_safe, message = safe_video_file(video_file, 8000)  # 500 is the maximum allowed file size in megabytes
+        if not is_safe:
+            return jsonify({'success': False, 'message': message})
 
         temp_file = 'temp.mp4'
         video_file.save(temp_file)
@@ -55,14 +64,23 @@ def trim_video():
         # Convert request.form into a regular dictionary, excluding start and end time data
         clip_info = {key: value for key, value in request.form.items() if not key.startswith(('start-time-', 'end-time-'))}
 
+
         music_file = request.files.get('music-file')
         if music_file:
+            is_safe, message = safe_music_file(music_file, 200)
+            if not is_safe:
+                return jsonify({'success': False, 'message': message})
+            
             music_temp_file = 'temp_music.mp3'
             music_file.save(music_temp_file)
             clip_info['music_file_path'] = music_temp_file
 
+
         watermark_file = request.files.get('watermark-file')
         if watermark_file:
+            is_safe, message = safe_watermark_file(watermark_file, 20)
+            if not is_safe:
+                return jsonify({'success': False, 'message': message})
             watermark_temp_file = 'temp_watermark.png'
             watermark_file.save(watermark_temp_file)
             clip_info['watermark_file_path'] = watermark_temp_file
@@ -87,6 +105,11 @@ def trim_video():
         tb = traceback.format_exc()
         error_line = tb.split("\n")[-2]
         return jsonify({'success': False, 'message': f'Error: {str(e)}', 'detail': tb, 'error_line': error_line})
+    finally:
+        temp_files = glob.glob('temp*') + glob.glob('SPEAKER*')
+        for temp_file in temp_files:
+            if os.path.isfile(temp_file):
+                os.remove(temp_file)
 
 @app.route('/uploads/<filename>', methods=['GET'])
 def serve_file(filename):

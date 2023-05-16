@@ -8,7 +8,7 @@ from moviepy.editor import TextClip
 from moviepy.editor import *
 from moviepy.video.tools.subtitles import SubtitlesClip
 from moviepy.video.compositing.CompositeVideoClip import CompositeVideoClip
-from srt_format_timestamp import srt_format_timestamp
+from functions.srt_format_timestamp import srt_format_timestamp
 
 def create_subtitle_clip(srt_filename, color, font, font_size, background_color, font_stroke_width, font_stroke_color, position_horizontal, position_vertical, video):
     generator = lambda txt: TextClip(

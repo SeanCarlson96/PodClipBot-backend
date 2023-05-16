@@ -1,11 +1,11 @@
 import traceback
-from flask import Flask, jsonify, request, send_file, send_from_directory, make_response, Response
+from flask import Flask, jsonify, request, send_from_directory, make_response, Response
 from flask_cors import CORS
 from auth_decorator import jwt_required
 import time
 from flask_mongoengine import MongoEngine
 from flask_bcrypt import Bcrypt
-from flask_jwt_extended import decode_token, JWTManager, get_jwt_identity
+from flask_jwt_extended import JWTManager, get_jwt_identity
 from jwt.exceptions import PyJWTError
 from jwt import decode
 from models import User
@@ -16,8 +16,7 @@ from flask_socketio import SocketIO
 import logging
 from flask_mail import Mail, Message
 import datetime
-from build_clip import build_clip, cancel_processing, clip_cancel_flags
-from partial_content import partial_content_handler
+from functions.build_clip import build_clip, cancel_processing, clip_cancel_flags
 from moviepy.editor import TextClip
 
 logging.getLogger('werkzeug').setLevel(logging.ERROR)
@@ -51,7 +50,7 @@ def trim_video():
         video_file = request.files.get('video-file')
 
         temp_file = 'temp.mp4'
-        video_file.save(temp_file)        
+        video_file.save(temp_file)
         
         # Convert request.form into a regular dictionary, excluding start and end time data
         clip_info = {key: value for key, value in request.form.items() if not key.startswith(('start-time-', 'end-time-'))}

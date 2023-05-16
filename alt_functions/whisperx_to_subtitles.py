@@ -4,7 +4,7 @@ from moviepy.editor import TextClip
 from moviepy.editor import *
 from moviepy.video.tools.subtitles import SubtitlesClip
 from moviepy.video.compositing.CompositeVideoClip import CompositeVideoClip
-from srt_format_timestamp import srt_format_timestamp
+from functions.srt_format_timestamp import srt_format_timestamp
 
 def add_wx_subtitles(video, audio_filename):
 

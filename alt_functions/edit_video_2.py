@@ -1,11 +1,11 @@
 from moviepy.editor import *
 
-from center_and_crop import center_and_crop
-from whisperx_to_subtitles import add_subtitles
-from add_background_music import add_background_music
-from add_watermark import add_watermark
+from functions.center_and_crop import center_and_crop
+from alt_functions.whisperx_to_subtitles import add_subtitles
+from functions.add_background_music import add_background_music
+from functions.add_watermark import add_watermark
 import os
-from custom_logger import CancelProcessingException, MyBarLogger
+from functions.custom_logger import CancelProcessingException, MyBarLogger
 import socketio
 
 __all__ = ['clip_cancel_flags']

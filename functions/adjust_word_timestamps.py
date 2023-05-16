@@ -1,13 +1,3 @@
-# def adjust_word_timestamps(result_aligned):
-#     for word_segment in result_aligned['word_segments']:
-#         word = word_segment['word']
-#         for segment in result_aligned['segments']:
-#             chars = [char for char in segment['chars'] if 'char' in char and char['char'] in word]
-#             if chars:
-#                 word_segment['start'] = chars[0]['start']
-#                 word_segment['end'] = chars[-1]['end']
-
-#     return result_aligned
 
 def adjust_word_timestamps(result_aligned):
     new_word_segments = []

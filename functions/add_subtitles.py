@@ -8,10 +8,10 @@ from moviepy.editor import TextClip
 from moviepy.editor import *
 from moviepy.video.tools.subtitles import SubtitlesClip
 from moviepy.video.compositing.CompositeVideoClip import CompositeVideoClip
-from srt_format_timestamp import srt_format_timestamp
+from functions.srt_format_timestamp import srt_format_timestamp
 # from diarized_subtitles import diarized_subtitles
-from diarized_subtitles2 import diarized_subtitles
-from adjust_word_timestamps import adjust_word_timestamps
+from functions.diarized_subtitles2 import diarized_subtitles
+from functions.adjust_word_timestamps import adjust_word_timestamps
 
 def send_progress_update(socketio, progress):
     socketio.emit('video_processing_progress', {'progress': progress})

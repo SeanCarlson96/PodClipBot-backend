@@ -3,6 +3,8 @@ whisperx/
 
 uploads/
 
+__pycache__/
+
 final_videoTEMP_MPY_wvf_snd.mp3
 temp.mp4
 temp.srt

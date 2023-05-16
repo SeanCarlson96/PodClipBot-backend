@@ -12,7 +12,7 @@ def add_background_music(video, clip_info):
     volume_value = int(clip_info.get('volume', 50))
     music_choice = clip_info.get('musicChoice', 'random')
     custom_upload = clip_info.get('music_file_path', None)
-    fade_in_and_out = clip_info.get('musicFade')
+    fade_in_and_out = clip_info.get('musicFade', None)
     music_duration = int(clip_info.get('musicDuration', 100))
 
     if custom_upload:

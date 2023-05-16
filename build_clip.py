@@ -31,6 +31,7 @@ def cancel_processing(clip_name, socketio_instance):
     socketio_instance.emit('processing_canceled', {'clipName': clip_name})
 
 def build_clip(temp_file, start_time, end_time, clip_number, socketio, clip_info):
+    print(clip_cancel_flags)
     clip_name = "Clip " + str(clip_number)
     if check_for_cancel(clip_name, socketio):
         return

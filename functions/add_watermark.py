@@ -4,7 +4,7 @@ def add_watermark(video, clip_info):
 
     # Choose the watermark image based on conditions
     if clip_info.get('watermarkToggle') == 'on':
-        watermark_path = "watermarks/PCB_1.png"
+        watermark_path = "watermarks/PCB_3.png"
     elif clip_info.get('subscription') == 'none':
         watermark_path = "watermarks/PCB_fv_1.png"
     else:
@@ -15,7 +15,7 @@ def add_watermark(video, clip_info):
     position_percent_vertical = int(clip_info.get('watermarkPositionVertical', '25'))
     position_vertical = ((100 - position_percent_vertical)) / 100
     custom_upload = clip_info.get('watermark_file_path', None)
-    height = int(clip_info.get('watermarkSize', '250'))
+    height = int(clip_info.get('watermarkSize', '200'))
     opacity_percent = int(clip_info.get('watermarkOpacity', '100'))
     opacity = opacity_percent / 100
     duration = int(clip_info.get('watermarkDuration', '100'))

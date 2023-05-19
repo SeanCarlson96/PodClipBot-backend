@@ -21,6 +21,8 @@ def check_for_cancel(clip_name, socketio):
     global clip_cancel_flags
     if clip_cancel_flags.get(clip_name):
         socketio.emit('processing_canceled', {'clipName': clip_name})
+        # clip_cancel_flags.pop(clip_name)
+        print("clip was canceled, process should exit")
         return True
     return False
 

@@ -1,4 +1,5 @@
 import glob
+from http.client import BAD_REQUEST
 import pprint
 import traceback
 from flask import Flask, jsonify, request, send_from_directory, make_response, Response
@@ -100,13 +101,30 @@ def trim_video():
 
             build_clip(temp_file, start_time, end_time, clip_number, socketio, clip_info)
 
+        global clip_cancel_flags
         clip_cancel_flags.clear()
         return jsonify({'success': True, 'message': '/trim completed all clips'})
 
+    # except Exception as e:
+    #     tb = traceback.format_exc()
+    #     error_line = tb.split("\n")[-2]
+    #     return jsonify({'success': False, 'message': f'Error: {str(e)}', 'detail': tb, 'error_line': error_line})
+    
+    # finally:
+    except BAD_REQUEST as e:
+        # This will catch errors related to the request data
+        return jsonify({'success': False, 'Hmm, our bot did not like that request. Please try again.': str(e)}), 400
+    except FileNotFoundError as e:
+        # This will catch errors related to file not found
+        return jsonify({'success': False, 'There was an issue finding one of the files you provided, please try again.': str(e)}), 404
+    except PermissionError as e:
+        # This will catch errors related to file permissions
+        return jsonify({'success': False, 'We came across a 403 error with one of your files. Please try again.': str(e)}), 403
     except Exception as e:
+        # This will catch all other types of exceptions
         tb = traceback.format_exc()
         error_line = tb.split("\n")[-2]
-        return jsonify({'success': False, 'message': f'Error: {str(e)}', 'detail': tb, 'error_line': error_line})
+        return jsonify({'success': False, 'Sorry, something went wrong. Rest assured we are working on it. Please try again later.': f'Error: {str(e)}', 'detail': tb, 'error_line': error_line}), 500
     finally:
         temp_files = glob.glob('temp*') + glob.glob('SPEAKER*')
         for temp_file in temp_files:
@@ -177,7 +195,7 @@ def register():
                     'musicDuration': 100,
                     'watermarkPositionHorizontal': "center",
                     'watermarkPositionVertical': 25,
-                    'watermarkSize': 150,
+                    'watermarkSize': 200,
                     'watermarkOpacity': 100,
                     'watermarkDuration': 100,
                 }

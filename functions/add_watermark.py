@@ -11,7 +11,9 @@ def add_watermark(video, clip_info):
         video = CompositeVideoClip([video])
         return video
     
-    position_horizontal = clip_info.get('watermarkPositionHorizontal', 'center')
+
+    position_horizontal = clip_info.get('watermarkPositionHorizontal', 'center').lower()
+
     position_percent_vertical = int(clip_info.get('watermarkPositionVertical', '25'))
     position_vertical = ((100 - position_percent_vertical)) / 100
     custom_upload = clip_info.get('watermark_file_path', None)

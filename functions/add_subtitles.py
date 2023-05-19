@@ -31,7 +31,9 @@ def add_subtitles(video, audio_filename, clip_info, socketio):
     font_stroke_color = clip_info.get('strokeColor', 'black')
     if font_stroke_width == 0:
         font_stroke_color = None
-    position_horizontal = clip_info.get('subtitlePositionHorizontal', 'center')
+
+    position_horizontal = clip_info.get('subtitlePositionHorizontal', 'center').lower()
+
     position_vertical = ((100 - int(clip_info.get('subtitlePositionVertical', '35'))) / 100)
     # whisperx_model = clip_info.get('whisperXModel', 'tiny')
     segment_length = int(clip_info.get('subtitleSegmentLength', '10'))

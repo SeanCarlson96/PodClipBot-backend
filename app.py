@@ -86,7 +86,7 @@ def trim_video():
             watermark_file.save(watermark_temp_file)
             clip_info['watermark_file_path'] = watermark_temp_file
 
-        pprint(clip_info)
+        # print(clip_info)
 
         # Get all keys in the form data that start with 'start-time-'
         start_time_keys = [key for key in request.form.keys() if key.startswith('start-time-')]
@@ -147,7 +147,41 @@ def register():
         return jsonify({"message": "Email address already in use. Please use a different email address."}), 400
 
     password_hash = bcrypt.generate_password_hash(data['password']).decode('utf-8')
-    user = User(email=data['email'], username=data['username'], password_hash=password_hash, subscription='none')
+    user = User(
+                email=data['email'], 
+                username=data['username'], 
+                password_hash=password_hash, 
+                subscription='none', 
+                defaultSettings={
+                    'subtitlesToggle': True,
+                    'musicToggle': True,
+                    'volume': 50,
+                    'font': 'Arial',
+                    'fontSize': 15,
+                    'subtitleColor': '#ffffff',
+                    'subtitleBackgroundToggle': False,
+                    'musicChoice': 'random',
+                    'watermarkToggle': True,
+                    'subtitleBackgroundColor': '#000000',
+                    'strokeWidth': 0,
+                    'strokeColor': '#000000',
+                    'subtitlePositionHorizontal': 'center',
+                    'subtitlePositionVertical': 35,
+                    'subtitleSegmentLength': 10,
+                    'musicFadeToggle': True,
+                    'diarizationToggle': False,
+                    'secondSpeakerColor': "#FFFF00",
+                    'thirdSpeakerColor': "#0000FF",
+                    'fourthSpeakerColor': "#008000",
+                    'fifthSpeakerColor': "#FF0000",
+                    'musicDuration': 100,
+                    'watermarkPositionHorizontal': "center",
+                    'watermarkPositionVertical': 25,
+                    'watermarkSize': 150,
+                    'watermarkOpacity': 100,
+                    'watermarkDuration': 100,
+                }
+                )
     user.save()
     return jsonify({"message": "User registered successfully."}), 201
 
@@ -162,6 +196,7 @@ def login():
                         "email": user.email,
                         "username": user.username,
                         "subscription": user.subscription,
+                        "defaultSettings": user.defaultSettings,
                     }
         return jsonify({"access_token": access_token, "user": user_data}), 200
     else:
@@ -250,6 +285,9 @@ def update_user(user_id):
 
     if 'subscription' in request.json:
         user.subscription = request.json['subscription']
+
+    if 'defaultSettings' in request.json:
+        user.defaultSettings = request.json['defaultSettings']
 
     user.save()
 

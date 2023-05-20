@@ -200,25 +200,55 @@ def register():
                     'watermarkDuration': 100,
                 }
                 )
-    user.save()
+    # Wrap the save operation in a try/except block
+    try:
+        user.save()
+    except Exception as e:
+        return jsonify({"message": "Something went wrong while trying to register. Please try again later."}), 500
+
+
     return jsonify({"message": "User registered successfully."}), 201
+
+# @app.route('/login', methods=['POST'])
+# def login():
+#     data = request.get_json()
+#     user = User.objects.get(email=data['email'])
+#     if user and bcrypt.check_password_hash(user.password_hash, data['password']):
+#         access_token = create_access_token(identity=str(user.id))
+#         user_data = {
+#                         "id": str(user.id),
+#                         "email": user.email,
+#                         "username": user.username,
+#                         "subscription": user.subscription,
+#                         "defaultSettings": user.defaultSettings,
+#                     }
+#         return jsonify({"access_token": access_token, "user": user_data}), 200
+#     else:
+#         return jsonify({"message": "Invalid email or password."}), 401
 
 @app.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
-    user = User.objects.get(email=data['email'])
-    if user and bcrypt.check_password_hash(user.password_hash, data['password']):
-        access_token = create_access_token(identity=str(user.id))
-        user_data = {
-                        "id": str(user.id),
-                        "email": user.email,
-                        "username": user.username,
-                        "subscription": user.subscription,
-                        "defaultSettings": user.defaultSettings,
-                    }
-        return jsonify({"access_token": access_token, "user": user_data}), 200
-    else:
-        return jsonify({"message": "Invalid email or password."}), 401
+    try:
+        user = User.objects(email=data['email']).first()
+        if user and bcrypt.check_password_hash(user.password_hash, data['password']):
+            access_token = create_access_token(identity=str(user.id))
+            user_data = {
+                            "id": str(user.id),
+                            "email": user.email,
+                            "username": user.username,
+                            "subscription": user.subscription,
+                            "defaultSettings": user.defaultSettings,
+                        }
+            return jsonify({"access_token": access_token, "user": user_data}), 200
+        else:
+            return jsonify({"message": "Invalid email or password."}), 401
+    except (AttributeError, KeyError):
+        return jsonify({"message": "Invalid request. Please provide email and password."}), 400
+    except User.DoesNotExist:
+        return jsonify({"message": "User with given email doesn't exist."}), 404
+    except Exception as e:
+        return jsonify({"message": f"An error occurred while logging in: {str(e)}"}), 500
 
 @app.route('/protected', methods=['GET'])
 @jwt_required
@@ -288,29 +318,79 @@ def reset_password():
     except PyJWTError:
         return jsonify({"error": "Invalid or expired token"}), 401
 
+# @app.route('/api/users/<string:user_id>', methods=['PATCH'])
+# def update_user(user_id):
+#     user = User.objects(id=user_id).first()
+#     if user is None:
+#         return jsonify({'message': 'User not found'}), 404
+#     if 'username' in request.json:
+#         user.username = request.json['username']
+#     if 'email' in request.json:
+#         user.email = request.json['email']
+#     if 'subscription' in request.json:
+#         user.subscription = request.json['subscription']
+#     if 'defaultSettings' in request.json:
+#         user.defaultSettings = request.json['defaultSettings']
+#     user.save()
+#     return jsonify({'message': 'User updated successfully'}), 200
 @app.route('/api/users/<string:user_id>', methods=['PATCH'])
 def update_user(user_id):
-    user = User.objects(id=user_id).first()
+    try:
+        user = User.objects(id=user_id).first()
+        if user is None:
+            return jsonify({'message': 'User not found'}), 404
 
-    if user is None:
-        return jsonify({'message': 'User not found'}), 404
+        if 'username' in request.json:
+            # TODO: Validate username here
+            user.username = request.json['username']
 
-    if 'username' in request.json:
-        user.username = request.json['username']
+        if 'email' in request.json:
+            existing_user = User.objects(email=request.json['email']).first()
+            if existing_user and str(existing_user.id) != user_id:
+                return jsonify({"message": "Email address already in use. Please use a different email address."}), 400
+            # TODO: Validate email here
+            user.email = request.json['email']
 
-    if 'email' in request.json:
-        user.email = request.json['email']
+        if 'subscription' in request.json:
+            # TODO: Validate subscription here
+            user.subscription = request.json['subscription']
 
-    if 'subscription' in request.json:
-        user.subscription = request.json['subscription']
+        if 'defaultSettings' in request.json:
+            # TODO: Validate defaultSettings here
+            user.defaultSettings = request.json['defaultSettings']
 
-    if 'defaultSettings' in request.json:
-        user.defaultSettings = request.json['defaultSettings']
+        user.save()
 
-    user.save()
+        return jsonify({'message': 'User updated successfully'}), 200
+    except Exception as e:
+        # TODO: Consider logging the exception here for debugging purposes
+        return jsonify({'message': 'An error occurred while updating user information.'}), 500
 
-    return jsonify({'message': 'User updated successfully'}), 200
 
+# @app.route('/change-password', methods=['POST'])
+# def change_password():
+#     data = request.get_json()
+#     user_id = data.get('user_id')
+#     old_password = data.get('old_password')
+#     new_password = data.get('new_password')
+
+#     if not user_id or not old_password or not new_password:
+#         return jsonify({"error": "Missing user ID, old password or new password"}), 400
+
+#     user = User.objects(id=user_id).first()
+
+#     if not user:
+#         return jsonify({"error": "User not found"}), 404
+
+#     # Check if the old password is correct
+#     if not bcrypt.check_password_hash(user.password_hash, old_password):
+#         return jsonify({"error": "Incorrect current password"}), 400
+
+#     # Update the password
+#     password_hash = bcrypt.generate_password_hash(new_password).decode('utf-8')
+#     User.objects(id=user_id).update_one(set__password_hash=password_hash)
+
+#     return jsonify({"message": "Password updated successfully"}), 200
 @app.route('/change-password', methods=['POST'])
 def change_password():
     data = request.get_json()
@@ -319,16 +399,16 @@ def change_password():
     new_password = data.get('new_password')
 
     if not user_id or not old_password or not new_password:
-        return jsonify({"error": "Missing user ID, old password or new password"}), 400
+        return jsonify({"message": "Oops! Looks like you didn't provide all the necessary information. Please ensure that you've included your user ID, current password, and the new password."}), 400
 
     user = User.objects(id=user_id).first()
 
     if not user:
-        return jsonify({"error": "User not found"}), 404
+        return jsonify({"message": "We're sorry, but we couldn't find a user with the provided ID. Please make sure you're logged in and try again."}), 404
 
     # Check if the old password is correct
     if not bcrypt.check_password_hash(user.password_hash, old_password):
-        return jsonify({"error": "Incorrect current password"}), 400
+        return jsonify({"message": "The current password you've entered seems to be incorrect. Please verify your password and try again."}), 400
 
     # Update the password
     password_hash = bcrypt.generate_password_hash(new_password).decode('utf-8')
@@ -336,23 +416,41 @@ def change_password():
 
     return jsonify({"message": "Password updated successfully"}), 200
 
+
+# @app.route('/delete-account', methods=['DELETE'])
+# def delete_account():
+#     data = request.get_json()
+#     user_id = data.get('user_id')
+
+#     if not user_id:
+#         return jsonify({"error": "Missing user ID"}), 400
+
+#     user = User.objects(id=user_id).first()
+
+#     if not user:
+#         return jsonify({"error": "User not found"}), 404
+
+#     # Delete the user
+#     user.delete()
+
+#     return jsonify({"message": "Account deleted successfully"}), 200
 @app.route('/delete-account', methods=['DELETE'])
 def delete_account():
     data = request.get_json()
     user_id = data.get('user_id')
 
     if not user_id:
-        return jsonify({"error": "Missing user ID"}), 400
+        return jsonify({"message": "User ID is required to delete an account."}), 400
 
     user = User.objects(id=user_id).first()
 
     if not user:
-        return jsonify({"error": "User not found"}), 404
+        return jsonify({"message": "The account you're trying to delete does not exist. It might have been already deleted."}), 404
 
     # Delete the user
     user.delete()
 
-    return jsonify({"message": "Account deleted successfully"}), 200
+    return jsonify({"message": "Your account has been deleted successfully."}), 200
 
 
 # @app.route('/api/fonts', methods=['GET'])

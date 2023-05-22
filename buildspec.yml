@@ -1,0 +1,11 @@
+version: 0.2
+
+phases:
+  build:
+    commands:
+      - echo "Creating application archive..."
+      - zip -r application.zip .
+
+artifacts:
+  files:
+    - application.zip

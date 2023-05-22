@@ -8,10 +8,12 @@ from moviepy.editor import TextClip
 from moviepy.editor import *
 from moviepy.video.tools.subtitles import SubtitlesClip
 from moviepy.video.compositing.CompositeVideoClip import CompositeVideoClip
+from functions.fill_missing_times import fill_missing_times
 from functions.srt_format_timestamp import srt_format_timestamp
 # from diarized_subtitles import diarized_subtitles
 from functions.diarized_subtitles2 import diarized_subtitles
 from functions.adjust_word_timestamps import adjust_word_timestamps
+from functions.profanity_filter import check_profanity
 
 def send_progress_update(socketio, progress):
     socketio.emit('video_processing_progress', {'progress': progress})
@@ -20,8 +22,8 @@ def add_subtitles(video, audio_filename, clip_info, socketio):
 
     send_progress_update(socketio, 3)
 
-    font = clip_info.get('font', 'Arial')
-    font_size = 10 * int(clip_info.get('fontSize', '15'))
+    font = clip_info.get('font', 'Arial-Bold-Italic')
+    font_size = int(clip_info.get('fontSize', '15')) * 3
     subtitle_color = clip_info.get('subtitleColor', '#ffffff')
     subtitle_background = clip_info.get('subtitleBackgroundToggle', 'off')
     subtitle_background_color = clip_info.get('subtitleBackgroundColor', 'black') if subtitle_background == 'true' else None
@@ -38,6 +40,8 @@ def add_subtitles(video, audio_filename, clip_info, socketio):
     # whisperx_model = clip_info.get('whisperXModel', 'tiny')
     segment_length = int(clip_info.get('subtitleSegmentLength', '10'))
     diarization = clip_info.get('diarizationToggle', None)
+
+    videoDuration = video.duration
     
     send_progress_update(socketio, 6)
     # Get transcription segments using whisper
@@ -55,7 +59,7 @@ def add_subtitles(video, audio_filename, clip_info, socketio):
     # print('after whisperx.load_model')
     audio = whisperx.load_audio(audio_file)
     result = model.transcribe(audio, batch_size=batch_size)
-    # print(result)
+    print(result)
     # load alignment model and metadata
     model_a, metadata = whisperx.load_align_model(language_code=result["language"], device=device)
 
@@ -70,13 +74,16 @@ def add_subtitles(video, audio_filename, clip_info, socketio):
 
 
     send_progress_update(socketio, 18)
-
+    
     if diarization:
         socketio.emit('build_action', {'action': 'Diarizing'})
         video_with_subtitles = diarized_subtitles(socketio, clip_info, device, audio_file, result_aligned, segment_length, video, font, font_size, subtitle_color, background_color, font_stroke_width, font_stroke_color, position_horizontal, position_vertical)
     else:
         segments = result_aligned['word_segments']
         print('not diarized')
+        segments = fill_missing_times(segments, videoDuration)
+
+        # print(segments)
         # print(result_aligned)
         # Clear the contents of the .srt file
         srt_filename = os.path.splitext(video.filename)[0] + '.srt'
@@ -86,9 +93,13 @@ def add_subtitles(video, audio_filename, clip_info, socketio):
         with open(srt_filename, 'a', encoding='utf-8') as srtFile:
             textsegment = ''
             wordnumber = 1
+
             for idx, segment in enumerate(segments):
-                currentword = segment['word']
-                # build textsegments up to a specific character count. set at 10 right now
+                # currentword = segment['word']
+                currentword = check_profanity(segment['word'])
+                # build textsegments up to a specific character count
+                # print(segment)
+
                 if len(textsegment) == 0:
                     startTime = srt_format_timestamp(segment['start'])
                     segmentId = idx+1

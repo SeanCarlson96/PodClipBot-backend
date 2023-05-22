@@ -4,6 +4,8 @@ import whisperx
 from moviepy.editor import TextClip
 from moviepy.video.tools.subtitles import SubtitlesClip
 from moviepy.video.compositing.CompositeVideoClip import CompositeVideoClip
+from functions.fill_missing_times import fill_missing_times
+from functions.profanity_filter import check_profanity
 from functions.srt_format_timestamp import srt_format_timestamp
 
 def create_subtitle_clip(srt_filename, color, font, font_size, background_color, font_stroke_width, font_stroke_color, position_horizontal, position_vertical, video):
@@ -50,9 +52,14 @@ def diarized_subtitles(socketio, clip_info, device, audio_file, result_aligned, 
 
     socketio.emit('video_processing_progress', {'progress': 30})
 
+    videoDuration = video.duration
+
+    # print(result_aligned)
+
     result = whisperx.assign_word_speakers(diarize_segments, result_aligned)
     segments = result['word_segments']
     # print(result)
+    segments = fill_missing_times(segments, videoDuration)
 
     segments = assign_speaker(segments)
     # print(segments)
@@ -72,6 +79,8 @@ def diarized_subtitles(socketio, clip_info, device, audio_file, result_aligned, 
         else:
             print(f"Warning: 'speaker' key not found in segment: {segment}")
 
+    # print(speakers)
+
     for speaker, speaker_segments in speakers.items():
         srt_filename = f"{speaker}.srt"
         with open(srt_filename, 'a') as srtFile:
@@ -81,7 +90,9 @@ def diarized_subtitles(socketio, clip_info, device, audio_file, result_aligned, 
             wordnumber = 1
             current_speaker = None
             for idx, segment in enumerate(speaker_segments):
-                currentword = segment['word']
+                # currentword = segment['word']
+                currentword = check_profanity(segment['word'])
+                print(segment)
                 new_speaker = segment['speaker'] if 'speaker' in segment else None
 
                 if len(textsegment) == 0 or new_speaker != current_speaker:
@@ -164,6 +175,7 @@ def diarized_subtitles(socketio, clip_info, device, audio_file, result_aligned, 
     }
     clips = [video]
     for speaker in speakers.keys():
+        # print(speaker)
         srt_filename = f"{speaker}.srt"
         color = speaker_colors.get(speaker, 'white')  # default color is white if speaker not found in speaker_colors
         if os.path.exists(srt_filename):

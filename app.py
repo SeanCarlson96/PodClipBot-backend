@@ -126,6 +126,8 @@ def trim_video():
         error_line = tb.split("\n")[-2]
         return jsonify({'success': False, 'Sorry, something went wrong. Rest assured we are working on it. Please try again later.': f'Error: {str(e)}', 'detail': tb, 'error_line': error_line}), 500
     finally:
+        # global clip_cancel_flags
+        clip_cancel_flags.clear()
         temp_files = glob.glob('temp*') + glob.glob('SPEAKER*')
         for temp_file in temp_files:
             if os.path.isfile(temp_file):

@@ -30,7 +30,8 @@ def add_background_music(video, clip_info):
     default_volume = 50
     volume_adjustment = (volume_value - default_volume) / (100 - default_volume) * 9
     # Adjust the volumes
-    music = music + volume_adjustment - 6
+    # music = music + volume_adjustment - 6
+    music = music + volume_adjustment - 7
 
     # Set the music duration to match the video's duration
     # music = music[:video.duration * 1000]
@@ -40,8 +41,6 @@ def add_background_music(video, clip_info):
 
     # Add fade in and fade out effects to the background music
     if fade_in_and_out:
-        print('fading in and out')
-        print(fade_in_and_out)
         music = music.fade_in(1500).fade_out(1500)
 
     # Combine the audio tracks

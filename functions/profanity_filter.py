@@ -5,7 +5,7 @@ def censor(word):
 
 def check_profanity(word):
     # List of bad words to censor in subtitles
-    swear_words = ['fuck', 'fucking', 'shit', 'shitting', 'ass', 'dumbass', 'bitch', 'nigger', 'nigga', 'cunt', 'slut', 'whore']
+    swear_words = ['fuck', 'fucking', 'shit', 'shitting', 'ass', 'dumbass', 'bitch', 'nigger', 'nigga', 'cunt', 'slut', 'whore', 'kill', 'rape', 'rapist', 'asshole', 'anal']
     if word.lower() in swear_words:
         return censor(word)
     return word

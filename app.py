@@ -33,7 +33,8 @@ load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
-socketio = SocketIO(app, cors_allowed_origins="http://localhost:3000")
+# socketio = SocketIO(app, cors_allowed_origins="http://localhost:3000")
+socketio = SocketIO(app, cors_allowed_origins=os.environ["FRONTEND_URL"])
 app.config["MONGODB_SETTINGS"] = {
     'db': 'Cluster0',
     'host': os.environ["MONGODB_HOST"]
@@ -281,7 +282,8 @@ def forgot_password():
     token = create_access_token(identity=str(user.id), expires_delta=datetime.timedelta(hours=1))
 
     # Send a password reset email
-    reset_url = f'http://localhost:3000/reset-password?token={token}'
+    # reset_url = f'http://localhost:3000/reset-password?token={token}'
+    reset_url = f'{os.environ["FRONTEND_URL"]}/reset-password?token={token}'
     msg = Message(
         'Password Reset Request',
         sender='noreply@example.com',

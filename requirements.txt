@@ -45,7 +45,8 @@ fastapi==0.88.0
 faster-whisper==0.5.1
 ffmpeg-python==0.2.0
 filelock==3.12.0
-Flask @ file:///private/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_9ctftfb254/croot/flask_1671217361609/work
+# Flask @ file:///private/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_9ctftfb254/croot/flask_1671217361609/work
+Flask==2.2.2
 Flask-Bcrypt==1.0.1
 Flask-Cors @ file:///home/conda/feedstock_root/build_artifacts/flask-cors_1622383494577/work
 Flask-JWT-Extended @ file:///home/conda/feedstock_root/build_artifacts/flask-jwt-extended_1660605954541/work

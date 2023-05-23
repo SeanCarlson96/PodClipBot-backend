@@ -1,6 +1,6 @@
 import glob
 from http.client import BAD_REQUEST
-import pprint
+# import pprint
 import traceback
 from flask import Flask, jsonify, request, send_from_directory, make_response, Response
 from flask_cors import CORS
@@ -22,7 +22,7 @@ import logging
 from flask_mail import Mail, Message
 import datetime
 from functions.build_clip import build_clip, cancel_processing, clip_cancel_flags
-from moviepy.editor import TextClip
+# from moviepy.editor import TextClip
 from file_security_functions.safe_video_file import safe_video_file
 
 logging.getLogger('werkzeug').setLevel(logging.ERROR)

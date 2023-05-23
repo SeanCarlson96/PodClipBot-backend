@@ -31,18 +31,18 @@ logging.getLogger('engineio').setLevel(logging.ERROR)
 
 load_dotenv()
 
-app = Flask(__name__)
-CORS(app)
-# socketio = SocketIO(app, cors_allowed_origins="http://localhost:3000")
-socketio = SocketIO(app, cors_allowed_origins=os.environ["FRONTEND_URL"])
-app.config["MONGODB_SETTINGS"] = {
+application = Flask(__name__)
+CORS(application)
+# socketio = SocketIO(application, cors_allowed_origins="http://localhost:3000")
+socketio = SocketIO(application, cors_allowed_origins=os.environ["FRONTEND_URL"])
+application.config["MONGODB_SETTINGS"] = {
     'db': 'Cluster0',
     'host': os.environ["MONGODB_HOST"]
 }
-db = MongoEngine(app)
-bcrypt = Bcrypt(app)
-app.config["JWT_SECRET_KEY"] = os.environ["JWT_SECRET_KEY"]
-jwt = JWTManager(app)
+db = MongoEngine(application)
+bcrypt = Bcrypt(application)
+application.config["JWT_SECRET_KEY"] = os.environ["JWT_SECRET_KEY"]
+jwt = JWTManager(application)
 
 @socketio.on('cancel_processing')
 def handle_cancel_processing(data):
@@ -51,7 +51,7 @@ def handle_cancel_processing(data):
     socketio.emit('video_processing_progress', {'progress': 0})
     cancel_processing(clip_name, socketio)
 
-@app.route('/trim', methods=['POST'])
+@application.route('/trim', methods=['POST'])
 def trim_video():
     temp_file = None
     try:
@@ -134,7 +134,7 @@ def trim_video():
             if os.path.isfile(temp_file):
                 os.remove(temp_file)
 
-@app.route('/uploads/<filename>', methods=['GET'])
+@application.route('/uploads/<filename>', methods=['GET'])
 def serve_file(filename):
     response = make_response(send_from_directory('uploads', filename))
     response.headers['Content-Disposition'] = f'attachment; filename={filename}'
@@ -142,16 +142,16 @@ def serve_file(filename):
     response.headers['Cache-Control'] = 'no-store'  # Add this line
     return response
 
-@app.route('/api/music_files', methods=['GET'])
+@application.route('/api/music_files', methods=['GET'])
 def get_music_files():
     music_directory = 'music'
     music_files = os.listdir(music_directory)
     return jsonify(music_files)
-@app.route('/api/music/<path:filename>', methods=['GET'])
+@application.route('/api/music/<path:filename>', methods=['GET'])
 def get_music_file(filename):
     return send_from_directory('music', filename)
 
-@app.route('/progress')
+@application.route('/progress')
 def progress():
     def generate():
         for i in range(101):
@@ -159,7 +159,7 @@ def progress():
             time.sleep(0.1)  # simulate delay
     return Response(generate(), mimetype='text/event-stream')
 
-@app.route('/register', methods=['POST'])
+@application.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
 
@@ -212,7 +212,7 @@ def register():
 
     return jsonify({"message": "User registered successfully."}), 201
 
-# @app.route('/login', methods=['POST'])
+# @application.route('/login', methods=['POST'])
 # def login():
 #     data = request.get_json()
 #     user = User.objects.get(email=data['email'])
@@ -229,7 +229,7 @@ def register():
 #     else:
 #         return jsonify({"message": "Invalid email or password."}), 401
 
-@app.route('/login', methods=['POST'])
+@application.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
     try:
@@ -253,7 +253,7 @@ def login():
     except Exception as e:
         return jsonify({"message": f"An error occurred while logging in: {str(e)}"}), 500
 
-@app.route('/protected', methods=['GET'])
+@application.route('/protected', methods=['GET'])
 @jwt_required
 def protected_route():
     user_id = get_jwt_identity()
@@ -261,14 +261,14 @@ def protected_route():
     return jsonify({"message": f"Welcome, {user.username}!"})
 
 # Configure Flask-Mail (use your own email settings)
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'carlsonseanr@example.com'
-app.config['MAIL_PASSWORD'] = 'your-email-password'
-mail = Mail(app)
+application.config['MAIL_SERVER'] = 'smtp.gmail.com'
+application.config['MAIL_PORT'] = 587
+application.config['MAIL_USE_TLS'] = True
+application.config['MAIL_USERNAME'] = 'carlsonseanr@example.com'
+application.config['MAIL_PASSWORD'] = 'your-email-password'
+mail = Mail(application)
 
-@app.route('/forgot-password', methods=['POST'])
+@application.route('/forgot-password', methods=['POST'])
 def forgot_password():
     data = request.get_json()
     email = data.get('email')
@@ -295,7 +295,7 @@ def forgot_password():
 
     return jsonify({"message": "Password reset email sent"}), 200
 
-@app.route('/reset-password', methods=['POST'])
+@application.route('/reset-password', methods=['POST'])
 def reset_password():
     data = request.get_json()
     token = data.get('token')
@@ -305,7 +305,7 @@ def reset_password():
         return jsonify({"error": "Missing token or password"}), 400
 
     try:
-        decoded_token = decode(token, app.config['JWT_SECRET_KEY'], algorithms=['HS256'])
+        decoded_token = decode(token, application.config['JWT_SECRET_KEY'], algorithms=['HS256'])
         user_id = decoded_token['sub']
         user = User.objects(id=user_id).first()
 
@@ -322,7 +322,7 @@ def reset_password():
     except PyJWTError:
         return jsonify({"error": "Invalid or expired token"}), 401
 
-# @app.route('/api/users/<string:user_id>', methods=['PATCH'])
+# @application.route('/api/users/<string:user_id>', methods=['PATCH'])
 # def update_user(user_id):
 #     user = User.objects(id=user_id).first()
 #     if user is None:
@@ -337,7 +337,7 @@ def reset_password():
 #         user.defaultSettings = request.json['defaultSettings']
 #     user.save()
 #     return jsonify({'message': 'User updated successfully'}), 200
-@app.route('/api/users/<string:user_id>', methods=['PATCH'])
+@application.route('/api/users/<string:user_id>', methods=['PATCH'])
 def update_user(user_id):
     try:
         user = User.objects(id=user_id).first()
@@ -371,7 +371,7 @@ def update_user(user_id):
         return jsonify({'message': 'An error occurred while updating user information.'}), 500
 
 
-# @app.route('/change-password', methods=['POST'])
+# @application.route('/change-password', methods=['POST'])
 # def change_password():
 #     data = request.get_json()
 #     user_id = data.get('user_id')
@@ -395,7 +395,7 @@ def update_user(user_id):
 #     User.objects(id=user_id).update_one(set__password_hash=password_hash)
 
 #     return jsonify({"message": "Password updated successfully"}), 200
-@app.route('/change-password', methods=['POST'])
+@application.route('/change-password', methods=['POST'])
 def change_password():
     data = request.get_json()
     user_id = data.get('user_id')
@@ -421,7 +421,7 @@ def change_password():
     return jsonify({"message": "Password updated successfully"}), 200
 
 
-# @app.route('/delete-account', methods=['DELETE'])
+# @application.route('/delete-account', methods=['DELETE'])
 # def delete_account():
 #     data = request.get_json()
 #     user_id = data.get('user_id')
@@ -438,7 +438,7 @@ def change_password():
 #     user.delete()
 
 #     return jsonify({"message": "Account deleted successfully"}), 200
-@app.route('/delete-account', methods=['DELETE'])
+@application.route('/delete-account', methods=['DELETE'])
 def delete_account():
     data = request.get_json()
     user_id = data.get('user_id')
@@ -457,10 +457,10 @@ def delete_account():
     return jsonify({"message": "Your account has been deleted successfully."}), 200
 
 
-# @app.route('/api/fonts', methods=['GET'])
+# @application.route('/api/fonts', methods=['GET'])
 # def get_fonts():
 #     fonts = TextClip.list('font')
 #     return jsonify(fonts)
 
 if __name__ == '__main__':
-    socketio.run(app)
+    socketio.run(application)

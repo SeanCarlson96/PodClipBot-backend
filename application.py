@@ -264,7 +264,7 @@ def protected_route():
 application.config['MAIL_SERVER'] = 'smtp.gmail.com'
 application.config['MAIL_PORT'] = 587
 application.config['MAIL_USE_TLS'] = True
-application.config['MAIL_USERNAME'] = 'carlsonseanr@example.com'
+application.config['MAIL_USERNAME'] = 'podclipbot@gmail.com'
 application.config['MAIL_PASSWORD'] = 'your-email-password'
 mail = Mail(application)
 

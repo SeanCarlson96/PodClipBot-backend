@@ -1,6 +1,5 @@
 import glob
 from http.client import BAD_REQUEST
-# import pprint
 import traceback
 from flask import Flask, jsonify, request, send_from_directory, make_response, Response
 from flask_cors import CORS
@@ -22,8 +21,8 @@ import logging
 from flask_mail import Mail, Message
 import datetime
 from functions.build_clip import build_clip, cancel_processing, clip_cancel_flags
-# from moviepy.editor import TextClip
 from file_security_functions.safe_video_file import safe_video_file
+import httpx
 
 logging.getLogger('werkzeug').setLevel(logging.ERROR)
 logging.getLogger('socketio').setLevel(logging.ERROR)
@@ -32,9 +31,10 @@ logging.getLogger('engineio').setLevel(logging.ERROR)
 load_dotenv()
 
 application = Flask(__name__)
-CORS(application)
-# socketio = SocketIO(application, cors_allowed_origins="http://localhost:3000")
-socketio = SocketIO(application, cors_allowed_origins=os.environ["FRONTEND_URL"])
+# CORS(application)
+CORS(application, resources={r"/*": {"origins": "http://localhost:3000"}})
+socketio = SocketIO(application, cors_allowed_origins="http://localhost:3000")
+# socketio = SocketIO(application, cors_allowed_origins=os.environ["FRONTEND_URL"])
 application.config["MONGODB_SETTINGS"] = {
     'db': 'Cluster0',
     'host': os.environ["MONGODB_HOST"]
@@ -147,6 +147,7 @@ def get_music_files():
     music_directory = 'music'
     music_files = os.listdir(music_directory)
     return jsonify(music_files)
+
 @application.route('/api/music/<path:filename>', methods=['GET'])
 def get_music_file(filename):
     return send_from_directory('music', filename)
@@ -211,23 +212,6 @@ def register():
 
 
     return jsonify({"message": "User registered successfully."}), 201
-
-# @application.route('/login', methods=['POST'])
-# def login():
-#     data = request.get_json()
-#     user = User.objects.get(email=data['email'])
-#     if user and bcrypt.check_password_hash(user.password_hash, data['password']):
-#         access_token = create_access_token(identity=str(user.id))
-#         user_data = {
-#                         "id": str(user.id),
-#                         "email": user.email,
-#                         "username": user.username,
-#                         "subscription": user.subscription,
-#                         "defaultSettings": user.defaultSettings,
-#                     }
-#         return jsonify({"access_token": access_token, "user": user_data}), 200
-#     else:
-#         return jsonify({"message": "Invalid email or password."}), 401
 
 @application.route('/login', methods=['POST'])
 def login():
@@ -322,21 +306,6 @@ def reset_password():
     except PyJWTError:
         return jsonify({"error": "Invalid or expired token"}), 401
 
-# @application.route('/api/users/<string:user_id>', methods=['PATCH'])
-# def update_user(user_id):
-#     user = User.objects(id=user_id).first()
-#     if user is None:
-#         return jsonify({'message': 'User not found'}), 404
-#     if 'username' in request.json:
-#         user.username = request.json['username']
-#     if 'email' in request.json:
-#         user.email = request.json['email']
-#     if 'subscription' in request.json:
-#         user.subscription = request.json['subscription']
-#     if 'defaultSettings' in request.json:
-#         user.defaultSettings = request.json['defaultSettings']
-#     user.save()
-#     return jsonify({'message': 'User updated successfully'}), 200
 @application.route('/api/users/<string:user_id>', methods=['PATCH'])
 def update_user(user_id):
     try:
@@ -370,31 +339,6 @@ def update_user(user_id):
         # TODO: Consider logging the exception here for debugging purposes
         return jsonify({'message': 'An error occurred while updating user information.'}), 500
 
-
-# @application.route('/change-password', methods=['POST'])
-# def change_password():
-#     data = request.get_json()
-#     user_id = data.get('user_id')
-#     old_password = data.get('old_password')
-#     new_password = data.get('new_password')
-
-#     if not user_id or not old_password or not new_password:
-#         return jsonify({"error": "Missing user ID, old password or new password"}), 400
-
-#     user = User.objects(id=user_id).first()
-
-#     if not user:
-#         return jsonify({"error": "User not found"}), 404
-
-#     # Check if the old password is correct
-#     if not bcrypt.check_password_hash(user.password_hash, old_password):
-#         return jsonify({"error": "Incorrect current password"}), 400
-
-#     # Update the password
-#     password_hash = bcrypt.generate_password_hash(new_password).decode('utf-8')
-#     User.objects(id=user_id).update_one(set__password_hash=password_hash)
-
-#     return jsonify({"message": "Password updated successfully"}), 200
 @application.route('/change-password', methods=['POST'])
 def change_password():
     data = request.get_json()
@@ -420,24 +364,6 @@ def change_password():
 
     return jsonify({"message": "Password updated successfully"}), 200
 
-
-# @application.route('/delete-account', methods=['DELETE'])
-# def delete_account():
-#     data = request.get_json()
-#     user_id = data.get('user_id')
-
-#     if not user_id:
-#         return jsonify({"error": "Missing user ID"}), 400
-
-#     user = User.objects(id=user_id).first()
-
-#     if not user:
-#         return jsonify({"error": "User not found"}), 404
-
-#     # Delete the user
-#     user.delete()
-
-#     return jsonify({"message": "Account deleted successfully"}), 200
 @application.route('/delete-account', methods=['DELETE'])
 def delete_account():
     data = request.get_json()
@@ -456,11 +382,48 @@ def delete_account():
 
     return jsonify({"message": "Your account has been deleted successfully."}), 200
 
+# @application.route('/verify-recaptcha', methods=['POST'])
+# async def verify_recaptcha():
+#     data = request.get_json()
+#     token = data['token']
 
-# @application.route('/api/fonts', methods=['GET'])
-# def get_fonts():
-#     fonts = TextClip.list('font')
-#     return jsonify(fonts)
+#     # POST request to Google's reCAPTCHA API
+#     response = await httpx.post(
+#         'https://www.google.com/recaptcha/api/siteverify',
+#         data = {
+#             'secret': os.environ["RECAPTCHA_SECRET_KEY"],
+#             'response': token,
+#         },
+#     )
+#     result = response.json()
+
+#     if result['success'] and result['score'] > 0.5:  # adjust the score limit as per your requirements
+#         return jsonify({'status': 'success'}), 200
+#     else:
+#         return jsonify({'status': 'failure', 'detail': 'Failed reCAPTCHA verification'}), 401
+    
+import requests
+
+@application.route('/verify_recaptcha', methods=['POST'])
+def verify_recaptcha():
+    data = request.get_json()
+    token = data['token']
+
+    # POST request to Google's reCAPTCHA API
+    response = requests.post(
+        'https://www.google.com/recaptcha/api/siteverify',
+        data = {
+            'secret': os.environ["RECAPTCHA_SECRET_KEY"],
+            'response': token,
+        },
+    )
+    result = response.json()
+
+    if result['success'] and result['score'] > 0.5:  # adjust the score limit as per your requirements
+        return jsonify({'status': 'success'}), 200
+    else:
+        return jsonify({'status': 'failure', 'detail': 'Failed reCAPTCHA verification'}), 401
+
 
 if __name__ == '__main__':
     socketio.run(application)

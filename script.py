@@ -1,18 +1,19 @@
-import requests
-import subprocess
+import re
 
-def is_package_on_pypi(package_name):
-    response = requests.get(f'https://pypi.org/pypi/{package_name}/json')
-    return response.status_code == 200
+# define the source and target file names
+source_file_name = 'source.txt'
+target_file_name = 'requirements.txt'
 
-# get list of packages in conda environment
-result = subprocess.run(['conda', 'list', '-e'], stdout=subprocess.PIPE, text=True)
-packages = result.stdout.split('\n')
+# read the content of the source file
+with open(source_file_name, 'r') as source_file:
+    content = source_file.read()
 
-# remove the '=version' part
-packages = [pkg.split('=')[0] for pkg in packages if pkg]
+# find the package names using regex
+packages = re.findall(r"'name'\s*:\s*'([^']*)',\s*'version'\s*:", content)
 
-# check each package
-for pkg in packages:
-    if not is_package_on_pypi(pkg):
-        print(f'Package {pkg} is not available on PyPI.')
+# write the package names to the target file
+with open(target_file_name, 'w') as target_file:
+    for package in packages:
+        target_file.write(package + '\n')
+
+print('Packages were written to', target_file_name)

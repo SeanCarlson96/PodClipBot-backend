@@ -1,0 +1,10 @@
+name: whisperx
+channels:
+  - defaults
+dependencies:
+  - python=3.10
+  - flask
+  - flask-cors
+  - flask-jwt-extended
+  - pylint
+prefix: /Users/seancarlson/anaconda3/envs/whisperx

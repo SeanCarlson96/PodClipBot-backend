@@ -406,5 +406,5 @@ def verify_recaptcha():
         return jsonify({'status': 'failure', 'detail': 'Failed reCAPTCHA verification'}), 401
 
 
-if __name__ == '__main__':
-    socketio.run(application)
+# if __name__ == '__main__':  # commented out when using gunicorn
+#     socketio.run(application)

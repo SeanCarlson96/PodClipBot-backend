@@ -23,6 +23,7 @@ import datetime
 from functions.build_clip import build_clip, cancel_processing, clip_cancel_flags
 from file_security_functions.safe_video_file import safe_video_file
 import httpx
+import requests
 
 logging.getLogger('werkzeug').setLevel(logging.ERROR)
 logging.getLogger('socketio').setLevel(logging.ERROR)
@@ -31,10 +32,10 @@ logging.getLogger('engineio').setLevel(logging.ERROR)
 load_dotenv()
 
 application = Flask(__name__)
-# CORS(application)
-CORS(application, resources={r"/*": {"origins": "http://localhost:3000"}})
-socketio = SocketIO(application, cors_allowed_origins="http://localhost:3000")
-# socketio = SocketIO(application, cors_allowed_origins=os.environ["FRONTEND_URL"])
+CORS(application)
+# CORS(application, resources={r"/*": {"origins": "http://localhost:3000"}})
+# socketio = SocketIO(application, cors_allowed_origins="http://localhost:3000")
+socketio = SocketIO(application, cors_allowed_origins=os.environ["FRONTEND_URL"])
 application.config["MONGODB_SETTINGS"] = {
     'db': 'Cluster0',
     'host': os.environ["MONGODB_HOST"]
@@ -249,7 +250,7 @@ application.config['MAIL_SERVER'] = 'smtp.gmail.com'
 application.config['MAIL_PORT'] = 587
 application.config['MAIL_USE_TLS'] = True
 application.config['MAIL_USERNAME'] = 'podclipbot@gmail.com'
-application.config['MAIL_PASSWORD'] = 'your-email-password'
+application.config['MAIL_PASSWORD'] = 'email-password'
 mail = Mail(application)
 
 @application.route('/forgot-password', methods=['POST'])
@@ -270,12 +271,13 @@ def forgot_password():
     reset_url = f'{os.environ["FRONTEND_URL"]}/reset-password?token={token}'
     msg = Message(
         'Password Reset Request',
-        sender='noreply@example.com',
+        sender='podclipbot@gmail.com', # Must be properly configured to send emails through a SMTP server
         recipients=[email]
     )
     msg.body = f'To reset your password, visit the following link: {reset_url}\n\nIf you did not request a password reset, please ignore this email.'
-    # mail.send(msg) -- Commented out to prevent sending emails during development
-    print(msg.body)
+    # mail.send(msg) # Commented out to prevent sending emails during development
+    # print(msg.body)
+    print(reset_url)
 
     return jsonify({"message": "Password reset email sent"}), 200
 
@@ -301,7 +303,7 @@ def reset_password():
         User.objects(id=user_id).update_one(set__password_hash=password_hash)
 
 
-        return jsonify({"message": "Password updated successfully"}), 200
+        return jsonify({"message": "Password updated successfully. Redirecting to sign in page."}), 200
 
     except PyJWTError:
         return jsonify({"error": "Invalid or expired token"}), 401
@@ -382,29 +384,7 @@ def delete_account():
 
     return jsonify({"message": "Your account has been deleted successfully."}), 200
 
-# @application.route('/verify-recaptcha', methods=['POST'])
-# async def verify_recaptcha():
-#     data = request.get_json()
-#     token = data['token']
-
-#     # POST request to Google's reCAPTCHA API
-#     response = await httpx.post(
-#         'https://www.google.com/recaptcha/api/siteverify',
-#         data = {
-#             'secret': os.environ["RECAPTCHA_SECRET_KEY"],
-#             'response': token,
-#         },
-#     )
-#     result = response.json()
-
-#     if result['success'] and result['score'] > 0.5:  # adjust the score limit as per your requirements
-#         return jsonify({'status': 'success'}), 200
-#     else:
-#         return jsonify({'status': 'failure', 'detail': 'Failed reCAPTCHA verification'}), 401
-    
-import requests
-
-@application.route('/verify_recaptcha', methods=['POST'])
+@application.route('/verify-recaptcha', methods=['POST'])
 def verify_recaptcha():
     data = request.get_json()
     token = data['token']
@@ -420,7 +400,8 @@ def verify_recaptcha():
     result = response.json()
 
     if result['success'] and result['score'] > 0.5:  # adjust the score limit as per your requirements
-        return jsonify({'status': 'success'}), 200
+        # return jsonify({'status': 'failure', 'detail': 'Failed reCAPTCHA verification'}), 401 # for testing purposes
+        return jsonify({'status': 'success', 'detail': 'User is likely human'}), 200
     else:
         return jsonify({'status': 'failure', 'detail': 'Failed reCAPTCHA verification'}), 401
 

@@ -29,8 +29,10 @@ RUN conda env create -f environment.yml
 # Make RUN commands use the new environment:
 SHELL ["conda", "run", "-n", "whisperx", "/bin/bash", "-c"]
 
+RUN pip install torch==2.0.0 torchvision==0.15.0 torchaudio==2.0.0
+
 # Install the packages not found in Conda
-RUN pip install gunicorn httpx hmmlearn moviepy flask_mongoengine flask_bcrypt python-magic python-dotenv flask_socketio flask_mail pydub
+RUN pip install gunicorn gevent httpx hmmlearn moviepy flask_mongoengine flask_bcrypt python-magic python-dotenv flask_socketio flask_mail pydub
 
 # Install whisperx
 RUN pip install git+https://github.com/m-bain/whisperx.git
@@ -42,4 +44,5 @@ RUN python -c "import flask"
 # Make the image start with the Flask app:
 # ENTRYPOINT ["conda", "run", "--no-capture-output", "-n", "whisperx", "python",
 # "application.py"]
-ENTRYPOINT ["conda", "run", "--no-capture-output", "-n", "whisperx", "gunicorn", "--worker-class", "eventlet", "-w", "1", "application:app"]
+# ENTRYPOINT ["conda", "run", "--no-capture-output", "-n", "whisperx", "gunicorn", "--worker-class", "gevent", "-w", "1", "application:application"]
+ENTRYPOINT ["conda", "run", "--no-capture-output", "-n", "whisperx", "gunicorn", "--bind", "0.0.0.0:8000", "--worker-class", "gevent", "-w", "1", "application:application"]

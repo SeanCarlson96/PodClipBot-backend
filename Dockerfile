@@ -29,7 +29,11 @@ RUN conda env create -f environment.yml
 # Make RUN commands use the new environment:
 SHELL ["conda", "run", "-n", "whisperx", "/bin/bash", "-c"]
 
-RUN pip install torch==2.0.0+cu117 torchvision==0.15.0 torchaudio==2.0.0
+# RUN pip install torch==2.0.0 torchvision==0.15.0 torchaudio==2.0.0  # not sure
+# why this line worked when building the image on my machine, but did not work
+# when in codebuild
+# lets try this conda line from whixperx instead
+RUN conda install pytorch==2.0.0 torchvision==0.15.0 torchaudio==2.0.0 pytorch-cuda=11.7 -c pytorch -c nvidia
 
 # Install the packages not found in Conda
 RUN pip install gunicorn gevent httpx hmmlearn moviepy flask_mongoengine flask_bcrypt python-magic python-dotenv flask_socketio flask_mail pydub

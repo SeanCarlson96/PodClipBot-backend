@@ -29,7 +29,7 @@ RUN conda env create -f environment.yml
 # Make RUN commands use the new environment:
 SHELL ["conda", "run", "-n", "whisperx", "/bin/bash", "-c"]
 
-RUN pip install torch==2.0.0 torchvision==0.15.0 torchaudio==2.0.0
+RUN pip install torch==2.0.0+cu117 torchvision==0.15.0 torchaudio==2.0.0
 
 # Install the packages not found in Conda
 RUN pip install gunicorn gevent httpx hmmlearn moviepy flask_mongoengine flask_bcrypt python-magic python-dotenv flask_socketio flask_mail pydub

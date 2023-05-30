@@ -1,5 +1,5 @@
-# Use Python slim-buster as a parent image
-FROM python:3.9-slim-buster as build
+# Use Miniconda3 as a parent image
+FROM continuumio/miniconda3:4.9.2-alpine
 
 # Set the working directory in the container to /app
 WORKDIR /app
@@ -7,33 +7,21 @@ WORKDIR /app
 # Add the current directory contents into the container at /app
 ADD . /app
 
-# Install necessary Debian packages
-RUN apt-get update && apt-get install -y \
-    gcc \
-    libmagic1 \
-    ffmpeg \
-    python3-dev && \
-    rm -rf /var/lib/apt/lists/*
+# Install necessary packages, create environment and install pip packages
+RUN apt-get update && apt-get install -y libmagic1 ffmpeg gcc python3-dev && \
+    rm -rf /var/lib/apt/lists/* && \
+    conda update conda && \
+    conda env create -f environment.yml && \
+    conda install pytorch==2.0.0 torchvision==0.15.0 torchaudio==2.0.0 pytorch-cuda=11.7 -c pytorch -c nvidia && \
+    pip install gunicorn gevent httpx hmmlearn moviepy flask_mongoengine flask_bcrypt python-magic python-dotenv flask_socketio flask_mail pydub stripe && \
+    pip install git+https://github.com/m-bain/whisperx.git
 
-# Copy the environment file
-COPY environment.yml .
-
-# Install Python packages not found in Conda
-RUN pip install gunicorn gevent httpx hmmlearn moviepy flask_mongoengine flask_bcrypt python-magic python-dotenv flask_socketio flask_mail pydub stripe
-
-# Install whisperx
-RUN pip install git+https://github.com/m-bain/whisperx.git
-
-# Use a smaller image to create the final image
-FROM python:3.9-slim-buster
-
-WORKDIR /app
-
-COPY --from=build /app /app
+# Make RUN commands use the new environment:
+SHELL ["conda", "run", "-n", "whisperx", "/bin/bash", "-c"]
 
 # Make sure the environment is activated:
 RUN echo "Make sure flask is installed:"
 RUN python -c "import flask"
 
 # Make the image start with the Flask app:
-ENTRYPOINT ["gunicorn", "--bind", "0.0.0.0:8000", "--worker-class", "gevent", "-w", "1", "application:application"]
+ENTRYPOINT ["conda", "run", "--no-capture-output", "-n", "whisperx", "gunicorn", "--bind", "0.0.0.0:8000", "--worker-class", "gevent", "-w", "1", "application:application"]

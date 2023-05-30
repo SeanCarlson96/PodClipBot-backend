@@ -407,6 +407,37 @@ def verify_recaptcha():
     else:
         return jsonify({'status': 'failure', 'detail': 'Failed reCAPTCHA verification'}), 401
 
+@application.route('/stripe-webhook', methods=['POST'])
+def handle_webhook():
+    payload = request.data
+    sig_header = request.headers.get('Stripe-Signature')
+    endpoint_secret = stripe.api_key  # replace with your Stripe endpoint secret
+
+    event = None
+
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, endpoint_secret
+        )
+    except ValueError:
+        return 'Invalid payload', 400
+    except stripe.error.SignatureVerificationError:
+        return 'Invalid signature', 400
+
+    # Handle the checkout.session.completed event
+    if event['type'] == 'checkout.session.completed':
+        session = event['data']['object']
+
+        # Get customer's email
+        customer_email = session['customer_details']['email']
+
+        # Here, you can get the user from your database using the customer email
+        user = User.objects(email=customer_email).first()
+        if user:
+            # Then you can update the user's subscription in your database
+            user.update(set__subscription=session['display_items'][0]['plan']['id'])
+
+    return jsonify({'message': 'Webhook received'}), 200
 
 # if __name__ == '__main__':  # commented out when using gunicorn
 #     socketio.run(application)

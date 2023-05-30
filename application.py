@@ -435,7 +435,10 @@ def handle_webhook():
         user = User.objects(email=customer_email).first()
         if user:
             # Then you can update the user's subscription in your database
-            user.update(set__subscription=session['display_items'][0]['plan']['id'])
+            # user.update(set__subscription=session['display_items'][0]['plan']['id'])
+            user.subscription = session['display_items'][0]['plan']['id']
+    
+    user.save()
 
     return jsonify({'message': 'Webhook received'}), 200
 

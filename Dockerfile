@@ -1,5 +1,6 @@
 # Use Miniconda3 as a parent image
-FROM continuumio/miniconda3:4.9.2-alpine
+# FROM continuumio/miniconda3:4.9.2-alpine
+FROM continuumio/miniconda3
 
 # Set the working directory in the container to /app
 WORKDIR /app

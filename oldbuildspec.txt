@@ -5,7 +5,8 @@ phases:
     commands:
       - echo Logging in to Amazon ECR...
       - aws --version
-      - echo $(aws ecr get-login-password --region us-east-2) | docker login --username AWS --password-stdin 328963664440.dkr.ecr.us-east-2.amazonaws.com/podclipbot-docker
+      - $(aws ecr get-login --region us-east-2 --no-include-email) # this line
+      is an outdated version of the command
       - REPOSITORY_URI=328963664440.dkr.ecr.us-east-2.amazonaws.com/podclipbot-docker
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - IMAGE_TAG=${COMMIT_HASH:=latest}
@@ -18,10 +19,12 @@ phases:
   post_build:
     commands:
       - echo Build completed on `date`
-      - echo Pushing the Docker images...
+      - echo Pushing the Docker image...
       - docker push $REPOSITORY_URI:latest
       - docker push $REPOSITORY_URI:$IMAGE_TAG
-      - printf '[{"name":"web","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+      - printf '[{"name":"pcb-docker","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > Dockerrun.aws.json
+
 artifacts:
   files:
-    - imagedefinitions.json
+    - Dockerrun.aws.json
+  discard-paths: yes

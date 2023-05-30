@@ -36,7 +36,7 @@ SHELL ["conda", "run", "-n", "whisperx", "/bin/bash", "-c"]
 RUN conda install pytorch==2.0.0 torchvision==0.15.0 torchaudio==2.0.0 pytorch-cuda=11.7 -c pytorch -c nvidia
 
 # Install the packages not found in Conda
-RUN pip install gunicorn gevent httpx hmmlearn moviepy flask_mongoengine flask_bcrypt python-magic python-dotenv flask_socketio flask_mail pydub
+RUN pip install gunicorn gevent httpx hmmlearn moviepy flask_mongoengine flask_bcrypt python-magic python-dotenv flask_socketio flask_mail pydub stripe
 
 # Install whisperx
 RUN pip install git+https://github.com/m-bain/whisperx.git

@@ -4,7 +4,7 @@ import tempfile
 from moviepy.editor import *
 from pydub import AudioSegment
 
-def add_background_music(video, clip_info):
+def add_background_music(tempdir, video, clip_info):
     music_folder = "music"
     music_files = [os.path.join(music_folder, f) for f in os.listdir(music_folder) if f.endswith(".mp3")]
     
@@ -24,7 +24,9 @@ def add_background_music(video, clip_info):
             music_file = os.path.join(music_folder, music_choice)
 
     music = AudioSegment.from_mp3(music_file)
-    video_audio = AudioSegment.from_file("temp.wav")
+    # video_audio = AudioSegment.from_file("temp.wav")
+    video_audio = AudioSegment.from_file(os.path.join(tempdir, "temp.wav"))
+
 
 
     default_volume = 50

@@ -1,0 +1,82 @@
+@application.route('/trim', methods=['POST'])
+def trim_video():
+    temp_file = None
+    try:
+        video_file = request.files.get('video-file')
+
+        is_safe, message = safe_video_file(video_file, 8000)  # 500 is the maximum allowed file size in megabytes
+        if not is_safe:
+            return jsonify({'success': False, 'message': message})
+
+        temp_file = 'temp.mp4'
+        video_file.save(temp_file)
+        
+        # Convert request.form into a regular dictionary, excluding start and end time data
+        clip_info = {key: value for key, value in request.form.items() if not key.startswith(('start-time-', 'end-time-'))}
+
+
+        music_file = request.files.get('music-file')
+        if music_file:
+            is_safe, message = safe_music_file(music_file, 200)
+            if not is_safe:
+                return jsonify({'success': False, 'message': message})
+            
+            music_temp_file = 'temp_music.mp3'
+            music_file.save(music_temp_file)
+            clip_info['music_file_path'] = music_temp_file
+
+
+        watermark_file = request.files.get('watermark-file')
+        if watermark_file:
+            is_safe, message = safe_watermark_file(watermark_file, 20)
+            if not is_safe:
+                return jsonify({'success': False, 'message': message})
+            watermark_temp_file = 'temp_watermark.png'
+            watermark_file.save(watermark_temp_file)
+            clip_info['watermark_file_path'] = watermark_temp_file
+
+        # print(clip_info)
+
+        # Get all keys in the form data that start with 'start-time-'
+        start_time_keys = [key for key in request.form.keys() if key.startswith('start-time-')]
+
+        # Loop over the start time keys and extract the corresponding start and end times
+        for index, start_time_key in enumerate(start_time_keys):
+            clip_number = start_time_key.split('-')[-1]
+            start_time = request.form.get(start_time_key)
+            end_time = request.form.get(f'end-time-{clip_number}')
+            socketio.emit('build_action', {'action': 'Building'})
+
+            build_clip(temp_file, start_time, end_time, clip_number, socketio, clip_info)
+
+        global clip_cancel_flags
+        clip_cancel_flags.clear()
+        return jsonify({'success': True, 'message': '/trim completed all clips'})
+
+    # except Exception as e:
+    #     tb = traceback.format_exc()
+    #     error_line = tb.split("\n")[-2]
+    #     return jsonify({'success': False, 'message': f'Error: {str(e)}', 'detail': tb, 'error_line': error_line})
+    
+    # finally:
+    except BAD_REQUEST as e:
+        # This will catch errors related to the request data
+        return jsonify({'success': False, 'Hmm, our bot did not like that request. Please try again.': str(e)}), 400
+    except FileNotFoundError as e:
+        # This will catch errors related to file not found
+        return jsonify({'success': False, 'There was an issue finding one of the files you provided, please try again.': str(e)}), 404
+    except PermissionError as e:
+        # This will catch errors related to file permissions
+        return jsonify({'success': False, 'We came across a 403 error with one of your files. Please try again.': str(e)}), 403
+    except Exception as e:
+        # This will catch all other types of exceptions
+        tb = traceback.format_exc()
+        error_line = tb.split("\n")[-2]
+        return jsonify({'success': False, 'Sorry, something went wrong. Rest assured we are working on it. Please try again later.': f'Error: {str(e)}', 'detail': tb, 'error_line': error_line}), 500
+    finally:
+        # global clip_cancel_flags
+        clip_cancel_flags.clear()
+        temp_files = glob.glob('temp*') + glob.glob('SPEAKER*')
+        for temp_file in temp_files:
+            if os.path.isfile(temp_file):
+                os.remove(temp_file)

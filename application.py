@@ -1,7 +1,7 @@
 import glob
 from http.client import BAD_REQUEST
 from json import dumps
-import pprint
+# import pprint
 import traceback
 from flask import Flask, jsonify, request, send_from_directory, make_response, Response
 from flask_cors import CORS
@@ -24,9 +24,10 @@ from flask_mail import Mail, Message
 import datetime
 from functions.build_clip import build_clip, cancel_processing, clip_cancel_flags
 from file_security_functions.safe_video_file import safe_video_file
-import httpx
+# import httpx
 import requests
 import stripe
+import tempfile
 
 from update_subscription import update_subscription
 
@@ -52,19 +53,19 @@ application.config["JWT_SECRET_KEY"] = os.environ["JWT_SECRET_KEY"]
 jwt = JWTManager(application)
 
 # At the top of your script
-client_connected = False
+# client_connected = False
 
-@socketio.on('connect')
-def connect():
-    global client_connected
-    client_connected = True
-    # print("Client connected")
+# @socketio.on('connect')
+# def connect():
+#     global client_connected
+#     client_connected = True
+#     # print("Client connected")
 
-@socketio.on('disconnect')
-def disconnect():
-    global client_connected
-    client_connected = False
-    # print("Client disconnected")
+# @socketio.on('disconnect')
+# def disconnect():
+#     global client_connected
+#     client_connected = False
+#     # print("Client disconnected")
 
 @socketio.on('cancel_processing')
 def handle_cancel_processing(data):
@@ -73,67 +74,63 @@ def handle_cancel_processing(data):
     socketio.emit('video_processing_progress', {'progress': 0})
     cancel_processing(clip_name, socketio)
 
+import os
+import tempfile
+
 @application.route('/trim', methods=['POST'])
 def trim_video():
-    temp_file = None
     try:
-        video_file = request.files.get('video-file')
+        with tempfile.TemporaryDirectory() as tempdir:
+            print("Temporary directory path is:", tempdir)
 
-        is_safe, message = safe_video_file(video_file, 8000)  # 500 is the maximum allowed file size in megabytes
-        if not is_safe:
-            return jsonify({'success': False, 'message': message})
+            video_file = request.files.get('video-file')
 
-        temp_file = 'temp.mp4'
-        video_file.save(temp_file)
-        
-        # Convert request.form into a regular dictionary, excluding start and end time data
-        clip_info = {key: value for key, value in request.form.items() if not key.startswith(('start-time-', 'end-time-'))}
-
-
-        music_file = request.files.get('music-file')
-        if music_file:
-            is_safe, message = safe_music_file(music_file, 200)
+            is_safe, message = safe_video_file(video_file, 8000)  # 500 is the maximum allowed file size in megabytes
             if not is_safe:
                 return jsonify({'success': False, 'message': message})
+
+            temp_file = os.path.join(tempdir, 'temp.mp4')
+            video_file.save(temp_file)
             
-            music_temp_file = 'temp_music.mp3'
-            music_file.save(music_temp_file)
-            clip_info['music_file_path'] = music_temp_file
+            # Convert request.form into a regular dictionary, excluding start and end time data
+            clip_info = {key: value for key, value in request.form.items() if not key.startswith(('start-time-', 'end-time-'))}
+
+            music_file = request.files.get('music-file')
+            if music_file:
+                is_safe, message = safe_music_file(music_file, 200)
+                if not is_safe:
+                    return jsonify({'success': False, 'message': message})
+                
+                music_temp_file = os.path.join(tempdir, 'temp_music.mp3')
+                music_file.save(music_temp_file)
+                clip_info['music_file_path'] = music_temp_file
 
 
-        watermark_file = request.files.get('watermark-file')
-        if watermark_file:
-            is_safe, message = safe_watermark_file(watermark_file, 20)
-            if not is_safe:
-                return jsonify({'success': False, 'message': message})
-            watermark_temp_file = 'temp_watermark.png'
-            watermark_file.save(watermark_temp_file)
-            clip_info['watermark_file_path'] = watermark_temp_file
+            watermark_file = request.files.get('watermark-file')
+            if watermark_file:
+                is_safe, message = safe_watermark_file(watermark_file, 20)
+                if not is_safe:
+                    return jsonify({'success': False, 'message': message})
+                watermark_temp_file = os.path.join(tempdir, 'temp_watermark.png')
+                watermark_file.save(watermark_temp_file)
+                clip_info['watermark_file_path'] = watermark_temp_file
 
-        # print(clip_info)
+            # Get all keys in the form data that start with 'start-time-'
+            start_time_keys = [key for key in request.form.keys() if key.startswith('start-time-')]
 
-        # Get all keys in the form data that start with 'start-time-'
-        start_time_keys = [key for key in request.form.keys() if key.startswith('start-time-')]
+            # Loop over the start time keys and extract the corresponding start and end times
+            for index, start_time_key in enumerate(start_time_keys):
+                clip_number = start_time_key.split('-')[-1]
+                start_time = request.form.get(start_time_key)
+                end_time = request.form.get(f'end-time-{clip_number}')
+                socketio.emit('build_action', {'action': 'Building'})
 
-        # Loop over the start time keys and extract the corresponding start and end times
-        for index, start_time_key in enumerate(start_time_keys):
-            clip_number = start_time_key.split('-')[-1]
-            start_time = request.form.get(start_time_key)
-            end_time = request.form.get(f'end-time-{clip_number}')
-            socketio.emit('build_action', {'action': 'Building'})
+                build_clip(tempdir, temp_file, start_time, end_time, clip_number, socketio, clip_info)
 
-            build_clip(temp_file, start_time, end_time, clip_number, socketio, clip_info)
+            global clip_cancel_flags
+            clip_cancel_flags.clear()
+            return jsonify({'success': True, 'message': '/trim completed all clips'})
 
-        global clip_cancel_flags
-        clip_cancel_flags.clear()
-        return jsonify({'success': True, 'message': '/trim completed all clips'})
-
-    # except Exception as e:
-    #     tb = traceback.format_exc()
-    #     error_line = tb.split("\n")[-2]
-    #     return jsonify({'success': False, 'message': f'Error: {str(e)}', 'detail': tb, 'error_line': error_line})
-    
-    # finally:
     except BAD_REQUEST as e:
         # This will catch errors related to the request data
         return jsonify({'success': False, 'Hmm, our bot did not like that request. Please try again.': str(e)}), 400
@@ -145,16 +142,7 @@ def trim_video():
         return jsonify({'success': False, 'We came across a 403 error with one of your files. Please try again.': str(e)}), 403
     except Exception as e:
         # This will catch all other types of exceptions
-        tb = traceback.format_exc()
-        error_line = tb.split("\n")[-2]
-        return jsonify({'success': False, 'Sorry, something went wrong. Rest assured we are working on it. Please try again later.': f'Error: {str(e)}', 'detail': tb, 'error_line': error_line}), 500
-    finally:
-        # global clip_cancel_flags
-        clip_cancel_flags.clear()
-        temp_files = glob.glob('temp*') + glob.glob('SPEAKER*')
-        for temp_file in temp_files:
-            if os.path.isfile(temp_file):
-                os.remove(temp_file)
+        tb = traceback.format
 
 @application.route('/uploads/<filename>', methods=['GET'])
 def serve_file(filename):
@@ -266,12 +254,12 @@ def protected_route():
     user = User.objects.get(id=user_id)
     return jsonify({"message": f"Welcome, {user.username}!"})
 
-# Configure Flask-Mail (use your own email settings)
-application.config['MAIL_SERVER'] = 'smtp.gmail.com'
+# Configure Flask-Mail with Amazon SES
+application.config['MAIL_SERVER'] = 'email-smtp.us-east-2.amazonaws.com'  # Replace with your Amazon SES server
 application.config['MAIL_PORT'] = 587
 application.config['MAIL_USE_TLS'] = True
-application.config['MAIL_USERNAME'] = 'podclipbot@gmail.com'
-application.config['MAIL_PASSWORD'] = 'email-password'
+application.config['MAIL_USERNAME'] = os.environ["AWS_SES_SMTP_USERNAME"]  # Replace with your Amazon SES SMTP username
+application.config['MAIL_PASSWORD'] = os.environ["AWS_SES_SMTP_PASSWORD"]  # Replace with your Amazon SES SMTP password
 mail = Mail(application)
 
 @application.route('/forgot-password', methods=['POST'])
@@ -296,9 +284,9 @@ def forgot_password():
         recipients=[email]
     )
     msg.body = f'To reset your password, visit the following link: {reset_url}\n\nIf you did not request a password reset, please ignore this email.'
-    # mail.send(msg) # Commented out to prevent sending emails during development
+    mail.send(msg) # Commented out to prevent sending emails during development
     # print(msg.body)
-    print(reset_url)
+    # print(reset_url)
 
     return jsonify({"message": "Password reset email sent"}), 200
 
@@ -426,31 +414,6 @@ def verify_recaptcha():
     else:
         return jsonify({'status': 'failure', 'detail': 'Failed reCAPTCHA verification'}), 401
 
-# @application.route('/create-checkout-session', methods=['POST'])
-# def create_checkout_session():
-#     print("checkout created")
-#     data = request.get_json()
-#     try:
-#         user_id = data['userId']
-#         priceId = data['priceId']
-
-#         stripe_price_id = priceId
-
-#         checkout_session = stripe.checkout.Session.create(
-#             payment_method_types=['card'],
-#             line_items=[{
-#                 'price': stripe_price_id,
-#                 'quantity': 1,
-#             }],
-#             mode='subscription',
-#             success_url=os.environ["FRONTEND_URL"] + '/returnedFromStripe/' + user_id,  # Update this with your actual success URL
-#             cancel_url=os.environ["FRONTEND_URL"] + '/subscriptions',  # Update this with your actual cancel URL
-#             client_reference_id=user_id,  # Attach the user ID here
-#         )
-
-#         return jsonify({"sessionId": checkout_session['id']}), 200
-#     except Exception as e:
-#         return jsonify({"message": f"An error occurred: {str(e)}"}), 500
 @application.route('/create-checkout-session', methods=['POST'])
 def create_checkout_session():
     print("checkout created")
@@ -497,7 +460,6 @@ def create_checkout_session():
         return jsonify({"sessionId": checkout_session['id']}), 200
     except Exception as e:
         return jsonify({"message": f"An error occurred: {str(e)}"}), 500
-
 
 @application.route('/stripe-webhook', methods=['POST'])
 def stripe_webhook():
@@ -597,7 +559,6 @@ def get_user_by_id(user_id):
         print(e)
         return jsonify({'message': 'An error occurred while getting user information.'}), 500
 
-    
 
 # if __name__ == '__main__':  # commented out when using gunicorn
 #     socketio.run(application)

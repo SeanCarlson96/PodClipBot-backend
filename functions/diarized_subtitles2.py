@@ -42,7 +42,7 @@ def assign_speaker(words):
 
     return words
 
-def diarized_subtitles(socketio, clip_info, device, audio_file, result_aligned, segment_length, video, font, font_size, subtitle_color, background_color, font_stroke_width, font_stroke_color, position_horizontal, position_vertical):
+def diarized_subtitles(tempdir, socketio, clip_info, device, audio_file, result_aligned, segment_length, video, font, font_size, subtitle_color, background_color, font_stroke_width, font_stroke_color, position_horizontal, position_vertical):
     hf_token = os.environ["HF_TOKEN"]
 
     socketio.emit('video_processing_progress', {'progress': 21})
@@ -82,7 +82,9 @@ def diarized_subtitles(socketio, clip_info, device, audio_file, result_aligned, 
     # print(speakers)
 
     for speaker, speaker_segments in speakers.items():
-        srt_filename = f"{speaker}.srt"
+        # srt_filename = f"{speaker}.srt"
+        srt_filename = os.path.join(tempdir, f"{speaker}.srt")
+
         with open(srt_filename, 'a') as srtFile:
             pass
         with open(srt_filename, 'w', encoding='utf-8') as srtFile:
@@ -176,7 +178,8 @@ def diarized_subtitles(socketio, clip_info, device, audio_file, result_aligned, 
     clips = [video]
     for speaker in speakers.keys():
         # print(speaker)
-        srt_filename = f"{speaker}.srt"
+        # srt_filename = f"{speaker}.srt"
+        srt_filename = os.path.join(tempdir, f"{speaker}.srt")
         color = speaker_colors.get(speaker, 'white')  # default color is white if speaker not found in speaker_colors
         if os.path.exists(srt_filename):
             clip = create_subtitle_clip(srt_filename, color, font, font_size, background_color, font_stroke_width, font_stroke_color, position_horizontal, position_vertical, video)

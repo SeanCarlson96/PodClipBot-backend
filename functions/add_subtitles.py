@@ -1,9 +1,9 @@
-import glob
+# import glob
 import os
-import pprint
-import traceback
+# import pprint
+# import traceback
 import whisperx
-import gc 
+# import gc 
 from moviepy.editor import TextClip
 from moviepy.editor import *
 from moviepy.video.tools.subtitles import SubtitlesClip
@@ -18,7 +18,7 @@ from functions.profanity_filter import check_profanity
 def send_progress_update(socketio, progress):
     socketio.emit('video_processing_progress', {'progress': progress})
 
-def add_subtitles(video, audio_filename, clip_info, socketio):
+def add_subtitles(tempdir, video, audio_filename, clip_info, socketio):
 
     send_progress_update(socketio, 3)
 
@@ -77,7 +77,7 @@ def add_subtitles(video, audio_filename, clip_info, socketio):
     
     if diarization:
         socketio.emit('build_action', {'action': 'Diarizing'})
-        video_with_subtitles = diarized_subtitles(socketio, clip_info, device, audio_file, result_aligned, segment_length, video, font, font_size, subtitle_color, background_color, font_stroke_width, font_stroke_color, position_horizontal, position_vertical)
+        video_with_subtitles = diarized_subtitles(tempdir, socketio, clip_info, device, audio_file, result_aligned, segment_length, video, font, font_size, subtitle_color, background_color, font_stroke_width, font_stroke_color, position_horizontal, position_vertical)
     else:
         segments = result_aligned['word_segments']
         print('not diarized')
@@ -86,7 +86,8 @@ def add_subtitles(video, audio_filename, clip_info, socketio):
         # print(segments)
         # print(result_aligned)
         # Clear the contents of the .srt file
-        srt_filename = os.path.splitext(video.filename)[0] + '.srt'
+        # srt_filename = os.path.splitext(video.filename)[0] + '.srt'
+        srt_filename = os.path.join(tempdir, os.path.splitext(video.filename)[0] + '.srt')
         with open(srt_filename, 'w', encoding='utf-8') as srtFile:
             srtFile.write('')
         # Write the segments from whisper result into srt format

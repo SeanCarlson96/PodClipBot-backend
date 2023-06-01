@@ -8,6 +8,7 @@ from functions.add_background_music import add_background_music
 from functions.add_watermark import add_watermark
 import os
 from functions.custom_logger import CancelProcessingException, MyBarLogger
+import uuid
 
 __all__ = ['clip_cancel_flags']
 
@@ -32,7 +33,7 @@ def cancel_processing(clip_name, socketio_instance):
     clip_cancel_flags[clip_name] = True
     socketio_instance.emit('processing_canceled', {'clipName': clip_name})
 
-def build_clip(temp_file, start_time, end_time, clip_number, socketio, clip_info):
+def build_clip(tempdir, temp_file, start_time, end_time, clip_number, socketio, clip_info):
     print(clip_cancel_flags)
     clip_name = "Clip " + str(clip_number)
     if check_for_cancel(clip_name, socketio):
@@ -54,12 +55,13 @@ def build_clip(temp_file, start_time, end_time, clip_number, socketio, clip_info
 
     # Extract the audio from the video
     audio = video.audio
-    audio_filename = os.path.splitext(video.filename)[0] + '.wav'
+    # audio_filename = os.path.splitext(video.filename)[0] + '.wav'
+    audio_filename = os.path.join(tempdir, os.path.splitext(video.filename)[0] + '.wav')
     audio.write_audiofile(audio_filename)
 
     if clip_info.get('subtitlesToggle') == 'on':
         # Use whisperx to create subtitles, and add them to the video
-        video = add_subtitles(video, audio_filename, clip_info, socketio)
+        video = add_subtitles(tempdir, video, audio_filename, clip_info, socketio)
         if check_for_cancel(clip_name, socketio):
             return
 
@@ -72,13 +74,18 @@ def build_clip(temp_file, start_time, end_time, clip_number, socketio, clip_info
 
     if clip_info.get('musicToggle') == 'on':
         # Add background music
-        video = add_background_music(video, clip_info)
+        video = add_background_music(tempdir, video, clip_info)
         if check_for_cancel(clip_name, socketio):
             return
 
 
     # Write edited video to the file name
-    trimmed_file = 'clip' + clip_number + '.mp4'
+    # trimmed_file = 'clip' + clip_number + '.mp4'
+    # Generate a unique id
+    unique_id = uuid.uuid4()
+    # Write edited video to the file name
+    trimmed_file = f'clip{clip_number}_{unique_id}.mp4'
+    
     my_bar_logger = MyBarLogger(socketio, clip_cancel_flags, clip_name)
     socketio.emit('build_action', {'action': 'Writing'})
     try:

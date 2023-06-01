@@ -28,7 +28,8 @@ from file_security_functions.safe_video_file import safe_video_file
 import requests
 import stripe
 import tempfile
-
+from email_validator import validate_email, EmailNotValidError
+from validate_password import validate_password
 from update_subscription import update_subscription
 
 logging.getLogger('werkzeug').setLevel(logging.ERROR)
@@ -177,6 +178,10 @@ def register():
     existing_user = User.objects(email=data['email']).first()
     if existing_user:
         return jsonify({"message": "Email address already in use. Please use a different email address."}), 400
+    
+    validation_result = validate_password(data['password'])
+    if validation_result is not True:
+        return validation_result
 
     password_hash = bcrypt.generate_password_hash(data['password']).decode('utf-8')
     user = User(
@@ -296,6 +301,10 @@ def reset_password():
     token = data.get('token')
     new_password = data.get('password')
 
+    validation_result = validate_password(new_password)
+    if validation_result is not True:
+        return validation_result
+
     if not token or not new_password:
         return jsonify({"error": "Missing token or password"}), 400
 
@@ -316,6 +325,8 @@ def reset_password():
 
     except PyJWTError:
         return jsonify({"error": "Invalid or expired token"}), 401
+    
+VALID_SUBSCRIPTIONS = ['base', 'advanced', 'premium', 'none']
 
 @application.route('/api/users/<string:user_id>', methods=['PATCH'])
 def update_user(user_id):
@@ -325,29 +336,50 @@ def update_user(user_id):
             return jsonify({'message': 'User not found'}), 404
 
         if 'username' in request.json:
-            # TODO: Validate username here
-            user.username = request.json['username']
+            username = request.json['username']
+            # Validate username here
+            if not username or not username.isalnum():
+                return jsonify({'message': 'Invalid username. Username must contain only alphanumeric characters.'}), 400
+            user.username = username
+            # user.username = request.json['username']
 
         if 'email' in request.json:
-            existing_user = User.objects(email=request.json['email']).first()
+            email = request.json['email']
+            # Validate email here
+            try:
+                validate_email(email)
+            except EmailNotValidError as e:
+                return jsonify({"message": "Invalid email address. Please enter a valid email."}), 400
+            existing_user = User.objects(email=email).first()
             if existing_user and str(existing_user.id) != user_id:
                 return jsonify({"message": "Email address already in use. Please use a different email address."}), 400
-            # TODO: Validate email here
-            user.email = request.json['email']
+            user.email = email
+            # existing_user = User.objects(email=request.json['email']).first()
+            # if existing_user and str(existing_user.id) != user_id:
+            #     return jsonify({"message": "Email address already in use. Please use a different email address."}), 400
+            # user.email = request.json['email']
 
         if 'subscription' in request.json:
-            # TODO: Validate subscription here
-            user.subscription = request.json['subscription']
+            # Validate subscription here
+            subscription = request.json['subscription']
+            if subscription not in VALID_SUBSCRIPTIONS:
+                return jsonify({'message': 'Invalid subscription. Subscription must be one of ' + ', '.join(VALID_SUBSCRIPTIONS)}), 400
+            user.subscription = subscription
+            # user.subscription = request.json['subscription']
 
         if 'defaultSettings' in request.json:
-            # TODO: Validate defaultSettings here
-            user.defaultSettings = request.json['defaultSettings']
+            # Validate defaultSettings here
+            defaultSettings = request.json['defaultSettings']
+            if not isinstance(defaultSettings, dict):
+                return jsonify({'message': 'Invalid default settings. Default settings must be a dictionary.'}), 400
+            user.defaultSettings = defaultSettings
+            # user.defaultSettings = request.json['defaultSettings']
 
         user.save()
 
         return jsonify({'message': 'User updated successfully'}), 200
     except Exception as e:
-        # TODO: Consider logging the exception here for debugging purposes
+        # print(e)
         return jsonify({'message': 'An error occurred while updating user information.'}), 500
 
 @application.route('/change-password', methods=['POST'])
@@ -369,6 +401,10 @@ def change_password():
     if not bcrypt.check_password_hash(user.password_hash, old_password):
         return jsonify({"message": "The current password you've entered seems to be incorrect. Please verify your password and try again."}), 400
 
+    validation_result = validate_password(new_password)
+    if validation_result is not True:
+        return validation_result
+    
     # Update the password
     password_hash = bcrypt.generate_password_hash(new_password).decode('utf-8')
     User.objects(id=user_id).update_one(set__password_hash=password_hash)

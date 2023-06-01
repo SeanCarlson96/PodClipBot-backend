@@ -1,5 +1,7 @@
 import glob
 from http.client import BAD_REQUEST
+from json import dumps
+import pprint
 import traceback
 from flask import Flask, jsonify, request, send_from_directory, make_response, Response
 from flask_cors import CORS
@@ -26,6 +28,8 @@ import httpx
 import requests
 import stripe
 
+from update_subscription import update_subscription
+
 logging.getLogger('werkzeug').setLevel(logging.ERROR)
 logging.getLogger('socketio').setLevel(logging.ERROR)
 logging.getLogger('engineio').setLevel(logging.ERROR)
@@ -46,6 +50,21 @@ db = MongoEngine(application)
 bcrypt = Bcrypt(application)
 application.config["JWT_SECRET_KEY"] = os.environ["JWT_SECRET_KEY"]
 jwt = JWTManager(application)
+
+# At the top of your script
+client_connected = False
+
+@socketio.on('connect')
+def connect():
+    global client_connected
+    client_connected = True
+    # print("Client connected")
+
+@socketio.on('disconnect')
+def disconnect():
+    global client_connected
+    client_connected = False
+    # print("Client disconnected")
 
 @socketio.on('cancel_processing')
 def handle_cancel_processing(data):
@@ -407,40 +426,178 @@ def verify_recaptcha():
     else:
         return jsonify({'status': 'failure', 'detail': 'Failed reCAPTCHA verification'}), 401
 
+# @application.route('/create-checkout-session', methods=['POST'])
+# def create_checkout_session():
+#     print("checkout created")
+#     data = request.get_json()
+#     try:
+#         user_id = data['userId']
+#         priceId = data['priceId']
+
+#         stripe_price_id = priceId
+
+#         checkout_session = stripe.checkout.Session.create(
+#             payment_method_types=['card'],
+#             line_items=[{
+#                 'price': stripe_price_id,
+#                 'quantity': 1,
+#             }],
+#             mode='subscription',
+#             success_url=os.environ["FRONTEND_URL"] + '/returnedFromStripe/' + user_id,  # Update this with your actual success URL
+#             cancel_url=os.environ["FRONTEND_URL"] + '/subscriptions',  # Update this with your actual cancel URL
+#             client_reference_id=user_id,  # Attach the user ID here
+#         )
+
+#         return jsonify({"sessionId": checkout_session['id']}), 200
+#     except Exception as e:
+#         return jsonify({"message": f"An error occurred: {str(e)}"}), 500
+@application.route('/create-checkout-session', methods=['POST'])
+def create_checkout_session():
+    print("checkout created")
+    data = request.get_json()
+    try:
+        user_id = data['userId']
+        priceId = data['priceId']
+        
+        stripe_price_id = priceId
+
+        # Retrieve user with the specified id
+        user = User.objects(id=user_id).first()
+
+        if user is None:
+            return jsonify({'message': 'User not found'}), 404
+
+        stripe_customer_id = user.stripe_customer_id
+
+        if not stripe_customer_id:
+            # Create new customer in Stripe
+            customer = stripe.Customer.create(
+                email=user.email
+            )
+            stripe_customer_id = customer['id']
+
+            # Save the Stripe customer ID in the database
+            # user.update(set__stripe_customer_id=stripe_customer_id)
+            user.stripe_customer_id = stripe_customer_id
+            user.save()
+
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price': stripe_price_id,
+                'quantity': 1,
+            }],
+            mode='subscription',
+            success_url=os.environ["FRONTEND_URL"] + '/returnedFromStripe/' + user_id,
+            cancel_url=os.environ["FRONTEND_URL"] + '/subscriptions',
+            client_reference_id=user_id,
+            customer=stripe_customer_id,  # Pass the Stripe customer ID here
+        )
+
+        return jsonify({"sessionId": checkout_session['id']}), 200
+    except Exception as e:
+        return jsonify({"message": f"An error occurred: {str(e)}"}), 500
+
+
 @application.route('/stripe-webhook', methods=['POST'])
-def handle_webhook():
-    payload = request.data
+def stripe_webhook():
+    socketio = SocketIO(application, cors_allowed_origins=os.environ["FRONTEND_URL"])
+    print("webhook received")
+    payload = request.get_data(as_text=True)
     sig_header = request.headers.get('Stripe-Signature')
-    endpoint_secret = stripe.api_key  # replace with your Stripe endpoint secret
-
-    event = None
-
+    socketio.emit('test_event', {'user_id': "test2", 'subscription': "tes2t"})
     try:
         event = stripe.Webhook.construct_event(
-            payload, sig_header, endpoint_secret
-        )
-    except ValueError:
-        return 'Invalid payload', 400
-    except stripe.error.SignatureVerificationError:
-        return 'Invalid signature', 400
+            payload, sig_header, os.environ.get('STRIPE_WEBHOOK_SECRET'))
 
-    # Handle the checkout.session.completed event
-    if event['type'] == 'checkout.session.completed':
-        session = event['data']['object']
+        if event['type'] == 'checkout.session.completed':
+            session = event['data']['object']
 
-        # Get customer's email
-        customer_email = session['customer_details']['email']
+            # Fetch the subscription object using subscription id
+            if 'subscription' in session:
+                subscription_id = session['subscription']
+                subscription = stripe.Subscription.retrieve(subscription_id)
+                if 'items' in subscription and 'data' in subscription['items']:
+                    price_id = subscription['items']['data'][0]['price']['id']
+                    # Retrieve Stripe customer ID
+                    stripe_customer_id = subscription['customer']
+                    user_id = session['client_reference_id']
+                    updated_subscription = update_subscription(session['client_reference_id'], price_id)
+                    if not updated_subscription:
+                        return jsonify({}), 200
+                    else:
+                        # print(client_connected)
+                        # socketio.emit('subscription_updated', {'user_id': user_id, 'subscription': updated_subscription})
+                        print("no longer need to emit")
+                    
+                    # Update user with Stripe customer ID
+                    user = User.objects(id=user_id).first()
+                    if user:
+                        user.stripe_customer_id = stripe_customer_id
+                        user.save()
+                    else:
+                        print('User not found: {user_id}')
+                else:
+                    print('Price ID not found in subscription')
+            else:
+                print('Subscription not found in session')
 
-        # Here, you can get the user from your database using the customer email
-        user = User.objects(email=customer_email).first()
-        if user:
-            # Then you can update the user's subscription in your database
-            # user.update(set__subscription=session['display_items'][0]['plan']['id'])
-            user.subscription = session['display_items'][0]['plan']['id']
+        elif event['type'] == 'customer.subscription.updated' or event['type'] == 'customer.subscription.deleted':
+            subscription = event['data']['object']
+            user = User.objects(stripe_customer_id=subscription['customer']).first()
+            if user is None:
+                print('User not found')
+                return jsonify({}), 400
+            user_id = user.id
+            # print(event)
+
+            if event['type'] == 'customer.subscription.deleted' or subscription['status'] != 'active':
+                price_id = 'none'
+            else:
+                price_id = subscription['items']['data'][0]['price']['id']
+
+            updated_subscription = update_subscription(user_id, price_id)
+            if not update_subscription(user_id, price_id):
+                return jsonify({}), 200
+            else:
+                # print(client_connected)
+                # socketio.emit('subscription_updated', {'user_id': user_id, 'subscription': updated_subscription})
+                print("no longer need to emit")
+
+    except ValueError as e:
+        print(f'Invalid payload: {str(e)}')
+        return jsonify({}), 400
+    except stripe.error.SignatureVerificationError as e:
+        print(f'Invalid signature: {str(e)}')
+        return jsonify({}), 400
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
+        return jsonify({}), 400
+    socketio.emit('test_event', {'user_id': "test3", 'subscription': "test3"})
+    return jsonify({}), 200
+
+@application.route('/api/getUserById/<string:user_id>', methods=['GET'])
+def get_user_by_id(user_id):
+    try:
+        user = User.objects(id=user_id).first()
+        if user is None:
+            return jsonify({'message': 'User not found'}), 404
+
+        # Build the user data dictionary
+        user_data = {
+            "id": str(user.id),
+            "email": user.email,
+            "username": user.username,
+            "subscription": user.subscription,
+            "defaultSettings": user.defaultSettings,
+        }
+
+        return jsonify({'user': user_data}), 200
+    except Exception as e:
+        print(e)
+        return jsonify({'message': 'An error occurred while getting user information.'}), 500
+
     
-    user.save()
-
-    return jsonify({'message': 'Webhook received'}), 200
 
 # if __name__ == '__main__':  # commented out when using gunicorn
 #     socketio.run(application)

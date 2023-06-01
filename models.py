@@ -7,3 +7,4 @@ class User(Document):
     password_hash = StringField(required=True)
     subscription = StringField(required=True)
     defaultSettings = DictField()
+    stripe_customer_id = StringField()

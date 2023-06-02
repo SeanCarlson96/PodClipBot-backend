@@ -14,6 +14,15 @@ RUN apt-get update && apt-get install -y libmagic1 ffmpeg gcc python3-dev && \
     /opt/conda/envs/whisperx/bin/pip install gunicorn gevent httpx hmmlearn moviepy flask_mongoengine flask_bcrypt python-magic python-dotenv flask_socketio flask_mail pydub stripe && \
     /opt/conda/envs/whisperx/bin/pip install git+https://github.com/m-bain/whisperx.git
 
+# Stage 2: Runtime Image
+FROM continuumio/miniconda3 as runtime
+
+COPY --from=base /opt/conda /opt/conda
+
+WORKDIR /app
+
+COPY --from=base /app /app
+
 # Make RUN commands use the new environment:
 SHELL ["conda", "run", "-n", "whisperx", "/bin/bash", "-c"]
 
@@ -22,4 +31,4 @@ RUN echo "Make sure flask is installed:"
 RUN python -c "import flask"
 
 # Make the image start with the Flask app:
-ENTRYPOINT ["conda", "run", "--no-capture-output", "-n", "whisperx", "gunicorn", "--bind", "0.0.0.0:80", "--worker-class", "gevent", "-w", "1", "application:application"]
+ENTRYPOINT ["conda", "run", "--no-capture-output", "-n", "whisperx", "gunicorn", "--bind", "0.0.0.0:8000", "--worker-class", "gevent", "-w", "1", "application:application"]

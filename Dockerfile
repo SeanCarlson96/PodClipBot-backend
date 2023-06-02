@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y libmagic1 ffmpeg gcc python3-dev && \
     conda update conda && \
     conda env create -f environment.yml && \
     conda install pytorch==2.0.0 torchvision==0.15.0 torchaudio==2.0.0 pytorch-cuda=11.7 -c pytorch -c nvidia && \
+    # pip install torch==2.0.0 torchvision==0.15.1 torchaudio==2.0.1 && \
     pip install gunicorn gevent httpx hmmlearn moviepy flask_mongoengine flask_bcrypt python-magic python-dotenv flask_socketio flask_mail pydub stripe && \
     pip install git+https://github.com/m-bain/whisperx.git
 

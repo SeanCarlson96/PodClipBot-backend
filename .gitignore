@@ -1,7 +1,7 @@
 __pycache__/
 clip_building_blocks/
 uploads/
-
+venv/
 .env
 
 SPEAKER_*

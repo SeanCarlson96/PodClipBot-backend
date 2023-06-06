@@ -75,7 +75,7 @@ julius==0.2.7
 kiwisolver==1.4.4
 lazy-object-proxy==1.9.0
 lazy_loader==0.2
-# librosa==0.10.0.post2
+librosa==0.8.1
 lightning==2.0.2
 lightning-cloud==0.5.36
 lightning-utilities==0.8.0
@@ -162,7 +162,7 @@ tomlkit==0.11.8
 torch==2.0.0
 torch-audiomentations==0.11.0
 torch-pitch-shift==1.2.4
-torchaudio==2.0.1
+# torchaudio==2.0.1 already specified in config file in ebextensions
 torchmetrics==0.11.4
 torchvision==0.15.1
 tqdm==4.65.0

@@ -128,7 +128,7 @@ python-engineio==4.4.1
 python-magic==0.4.27
 python-multipart==0.0.6
 python-socketio==5.8.0
-pytorch-lightning==2.0.2
+pytorch-lightning
 pytorch-metric-learning==2.1.2
 pytz==2023.3
 PyYAML==6.0

@@ -600,4 +600,4 @@ def get_user_by_id(user_id):
 
 
 if __name__ == '__main__':  # commented out when using gunicorn
-    socketio.run(application, host='0.0.0.0', port=5000)
+    socketio.run(application, host='0.0.0.0', port=8000)

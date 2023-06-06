@@ -163,6 +163,7 @@ torch==2.0.0
 torch-audiomentations==0.11.0
 torch-pitch-shift==1.2.4
 # torchaudio==2.0.1 already specified in config file in ebextensions
+torchaudio>=0.10,<1.0
 torchmetrics==0.11.4
 torchvision==0.15.1
 tqdm==4.65.0

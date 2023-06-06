@@ -1,4 +1,7 @@
 # import glob
+from gevent import monkey
+monkey.patch_all()
+
 from http.client import BAD_REQUEST
 # from json import dumps
 # import pprint
@@ -596,5 +599,5 @@ def get_user_by_id(user_id):
         return jsonify({'message': 'An error occurred while getting user information.'}), 500
 
 
-# if __name__ == '__main__':  # commented out when using gunicorn
-#     socketio.run(application)
+if __name__ == '__main__':  # commented out when using gunicorn
+    socketio.run(application, host='0.0.0.0', port=5000)

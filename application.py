@@ -1,4 +1,5 @@
 # import glob
+import sys
 from gevent import monkey
 monkey.patch_all()
 
@@ -80,6 +81,11 @@ def handle_cancel_processing(data):
 
 import os
 import tempfile
+
+@application.route('/')
+def hello_world():
+    print(sys.path)
+    return 'Hello, World!'
 
 @application.route('/trim', methods=['POST'])
 def trim_video():
@@ -599,5 +605,5 @@ def get_user_by_id(user_id):
         return jsonify({'message': 'An error occurred while getting user information.'}), 500
 
 
-if __name__ == '__main__':  # commented out when using gunicorn
-    socketio.run(application, host='0.0.0.0', port=8000)
+# if __name__ == '__main__':  # commented out when using gunicorn
+#     socketio.run(application, host='0.0.0.0', port=8000)

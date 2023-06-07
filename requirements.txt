@@ -180,5 +180,3 @@ WTForms==3.0.1
 yarl==1.9.2
 zope.event==4.6
 zope.interface==6.0
-git+https://github.com/m-bain/whisperx.git
-

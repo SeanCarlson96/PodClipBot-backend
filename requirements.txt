@@ -161,7 +161,7 @@ tomlkit==0.11.8
 torch-audiomentations==0.11.0
 torch-pitch-shift==1.2.4
 torchmetrics==0.11.4
-torchvision==0.9.1
+torchvision
 tqdm==4.65.0
 traitlets==5.9.0
 transformers==4.29.2

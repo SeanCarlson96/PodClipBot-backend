@@ -7,7 +7,6 @@ phases:
     commands:
       - echo Installing dependencies...
       - pip install --upgrade pip
-      - pip install -qq https://github.com/pyannote/pyannote-audio/archive/refs/heads/develop.zip
       - pip install -r requirements.txt
   pre_build:
     commands:

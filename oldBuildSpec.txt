@@ -15,9 +15,8 @@ phases:
   build:
     commands:
       - echo Build phase...
+      - echo Creating application source bundle...
+      - zip ./app_source.zip -r * .[^.]* -x buildspec.yml -x '*.git*'
 artifacts:
   files:
-    - '**/*'
-  exclude:
-    - '*.git*'
-    - 'buildspec.yml'
+    - app_source.zip

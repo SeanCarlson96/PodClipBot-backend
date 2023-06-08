@@ -75,7 +75,7 @@ julius==0.2.7
 kiwisolver==1.4.4
 lazy-object-proxy==1.9.0
 lazy_loader==0.2
-librosa==0.8.1
+librosa
 lightning==2.0.2
 lightning-cloud==0.5.36
 lightning-utilities==0.8.0
@@ -94,7 +94,7 @@ multidict==6.0.4
 networkx==2.6.3
 nltk==3.8.1
 numba==0.57.0
-numpy==1.20
+numpy
 omegaconf==2.3.0
 onnxruntime==1.15.0
 optuna==3.2.0

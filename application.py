@@ -84,8 +84,8 @@ import tempfile
 
 @application.route('/')
 def hello_world():
-    print(sys.path)
-    return 'Hello, World!'
+    # print(sys.path)
+    return 'Backend is running!'
 
 @application.route('/trim', methods=['POST'])
 def trim_video():

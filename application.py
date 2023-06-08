@@ -87,6 +87,10 @@ def hello_world():
     # print(sys.path)
     return 'Backend is running!'
 
+@application.route('/test')
+def test_1():
+    return 'Test completed'
+
 @application.route('/trim', methods=['POST'])
 def trim_video():
     try:

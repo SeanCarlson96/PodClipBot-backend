@@ -75,7 +75,7 @@ julius==0.2.7
 kiwisolver==1.4.4
 lazy-object-proxy==1.9.0
 lazy_loader==0.2
-librosa
+librosa==0.10.0.post2
 lightning==2.0.2
 lightning-cloud==0.5.36
 lightning-utilities==0.8.0

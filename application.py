@@ -8,7 +8,7 @@ from http.client import BAD_REQUEST
 # import pprint
 import traceback
 from flask import Flask, jsonify, request, send_from_directory, make_response, Response
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 from auth_decorator import jwt_required
 import time
 from flask_mongoengine import MongoEngine
@@ -443,6 +443,7 @@ def delete_account():
     return jsonify({"message": "Your account has been deleted successfully."}), 200
 
 @application.route('/verify-recaptcha', methods=['POST'])
+@cross_origin(origin='*',headers=['Content-Type','Authorization'])
 def verify_recaptcha():
     print("recaptcha hit")
     data = request.get_json()

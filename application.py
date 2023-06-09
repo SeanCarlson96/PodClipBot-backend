@@ -43,7 +43,7 @@ logging.getLogger('engineio').setLevel(logging.ERROR)
 load_dotenv()
 
 application = Flask(__name__)
-CORS(application)
+CORS(application, supports_credentials=True)
 # CORS(application, resources={r"/*": {"origins": "http://localhost:3000"}})
 # socketio = SocketIO(application, cors_allowed_origins="http://localhost:3000")
 socketio = SocketIO(application, cors_allowed_origins=os.environ["FRONTEND_URL"])
@@ -444,6 +444,7 @@ def delete_account():
 
 @application.route('/verify-recaptcha', methods=['POST'])
 def verify_recaptcha():
+    print("recaptcha hit")
     data = request.get_json()
     token = data['token']
 

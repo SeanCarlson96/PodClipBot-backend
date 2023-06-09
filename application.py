@@ -91,6 +91,20 @@ def hello_world():
 def test_1():
     return 'Test completed'
 
+@application.route('/endpoint', methods=['POST'])
+def handle_post():
+    data = request.get_json()
+    if not data or 'token' not in data:
+        return jsonify({'message': 'Bad request', 'success': False}), 400
+
+    token = data['token']
+    
+    # Here, you can add code to do something with the token.
+    # For example, you could verify it or store it.
+
+    # After you're done processing, return a success message.
+    return jsonify({'message': 'Request received successfully', 'success': True}), 200
+
 @application.route('/trim', methods=['POST'])
 def trim_video():
     try:
@@ -445,37 +459,31 @@ def delete_account():
 @application.route('/verify-recaptcha', methods=['POST'])
 # @cross_origin(origin='*',headers=['Content-Type','Authorization'])
 def verify_recaptcha():
-    print("recaptcha hit")
-    print(request.data.decode('utf-8'))
-    print("that was request data")
-    print(request.get_data(as_text=True))
-    print("that was request data as text")
-    data = request.get_json()
-    print("now data to follow")
-    print(data)
-    token = data['token']
+    try:
+        print("recaptcha hit")
+        data = request.get_json()
+        token = data['token']
 
-    print(token)
-    print("that was the token")
-    print(os.environ["RECAPTCHA_SECRET_KEY"])
-    # POST request to Google's reCAPTCHA API
-    response = requests.post(
-        'https://www.google.com/recaptcha/api/siteverify',
-        data = {
-            'secret': os.environ["RECAPTCHA_SECRET_KEY"],
-            'response': token,
-        },
-    )
-    print("5")
-    result = response.json()
+        # POST request to Google's reCAPTCHA API
+        response = requests.post(
+            'https://www.google.com/recaptcha/api/siteverify',
+            data = {
+                'secret': os.environ["RECAPTCHA_SECRET_KEY"],
+                'response': token,
+            },
+        )
+        result = response.json()
 
-    if result['success'] and result['score'] > 0.5:  # adjust the score limit as per your requirements
-        print("yes")
-        # return jsonify({'status': 'failure', 'detail': 'Failed reCAPTCHA verification'}), 401 # for testing purposes
-        return jsonify({'status': 'success', 'detail': 'User is likely human'}), 200
-    else:
-        print("no")
-        return jsonify({'status': 'failure', 'detail': 'Failed reCAPTCHA verification'}), 401
+        if result['success'] and result['score'] > 0.5:  # adjust the score limit as per your requirements
+            # return jsonify({'status': 'failure', 'detail': 'Failed reCAPTCHA verification'}), 401 # for testing purposes
+            return jsonify({'status': 'success', 'detail': 'User is likely human'}), 200
+        else:
+            print("no")
+            return jsonify({'status': 'failure', 'detail': 'Failed reCAPTCHA verification'}), 401
+    except Exception as e:
+            print("An error occurred: ", str(e))
+            traceback.print_exc(file=sys.stdout)
+            return jsonify({'status': 'failure', 'detail': 'An error occurred: ' + str(e)}), 500
 
 @application.route('/create-checkout-session', methods=['POST'])
 def create_checkout_session():

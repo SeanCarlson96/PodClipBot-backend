@@ -8,7 +8,7 @@ from http.client import BAD_REQUEST
 # import pprint
 import traceback
 from flask import Flask, jsonify, request, send_from_directory, make_response, Response
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
 from auth_decorator import jwt_required
 import time
 from flask_mongoengine import MongoEngine
@@ -461,6 +461,8 @@ def delete_account():
 def verify_recaptcha():
     try:
         print("recaptcha hit")
+        print(request.headers)
+        print(request.data)
         data = request.get_json()
         token = data['token']
 

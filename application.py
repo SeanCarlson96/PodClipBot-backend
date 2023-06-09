@@ -447,13 +447,16 @@ def delete_account():
 def verify_recaptcha():
     print("recaptcha hit")
     print(request.data.decode('utf-8'))
+    print("that was request data")
     print(request.get_data(as_text=True))
+    print("that was request data as text")
     data = request.get_json()
     print("now data to follow")
     print(data)
     token = data['token']
 
     print(token)
+    print("that was the token")
     print(os.environ["RECAPTCHA_SECRET_KEY"])
     # POST request to Google's reCAPTCHA API
     response = requests.post(

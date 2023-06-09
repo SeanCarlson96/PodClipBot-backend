@@ -449,6 +449,8 @@ def verify_recaptcha():
     data = request.get_json()
     token = data['token']
 
+    print(token)
+    print(os.environ["RECAPTCHA_SECRET_KEY"])
     # POST request to Google's reCAPTCHA API
     response = requests.post(
         'https://www.google.com/recaptcha/api/siteverify',
@@ -457,12 +459,15 @@ def verify_recaptcha():
             'response': token,
         },
     )
+    print("5")
     result = response.json()
 
     if result['success'] and result['score'] > 0.5:  # adjust the score limit as per your requirements
+        print("yes")
         # return jsonify({'status': 'failure', 'detail': 'Failed reCAPTCHA verification'}), 401 # for testing purposes
         return jsonify({'status': 'success', 'detail': 'User is likely human'}), 200
     else:
+        print("no")
         return jsonify({'status': 'failure', 'detail': 'Failed reCAPTCHA verification'}), 401
 
 @application.route('/create-checkout-session', methods=['POST'])

@@ -43,8 +43,8 @@ logging.getLogger('engineio').setLevel(logging.ERROR)
 load_dotenv()
 
 application = Flask(__name__)
-# CORS(application)
-CORS(application, resources={r"/*": {"origins": os.environ["FRONTEND_URL"]}})
+CORS(application)
+# CORS(application, resources={r"/*": {"origins": os.environ["FRONTEND_URL"]}})
 # socketio = SocketIO(application, cors_allowed_origins="http://localhost:3000")
 socketio = SocketIO(application, cors_allowed_origins=os.environ["FRONTEND_URL"])
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
@@ -443,10 +443,14 @@ def delete_account():
     return jsonify({"message": "Your account has been deleted successfully."}), 200
 
 @application.route('/verify-recaptcha', methods=['POST'])
-@cross_origin(origin='*',headers=['Content-Type','Authorization'])
+# @cross_origin(origin='*',headers=['Content-Type','Authorization'])
 def verify_recaptcha():
     print("recaptcha hit")
+    print(request.data.decode('utf-8'))
+    print(request.get_data(as_text=True))
     data = request.get_json()
+    print("now data to follow")
+    print(data)
     token = data['token']
 
     print(token)

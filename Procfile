@@ -1,1 +1,1 @@
-web: gunicorn -k geventwebsocket.gunicorn.workers.GeventWebSocketWorker -w 4 application:application
+web: gunicorn -k geventwebsocket.gunicorn.workers.GeventWebSocketWorker -w 4 application:application > /var/log/gunicorn/gunicorn.log 2>&1

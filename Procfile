@@ -1,1 +1,3 @@
-web: gunicorn -k geventwebsocket.gunicorn.workers.GeventWebSocketWorker -w 4 --access-logfile /var/log/gunicorn/access.log --error-logfile /var/log/gunicorn/error.log application:application
+web: gunicorn -k geventwebsocket.gunicorn.workers.GeventWebSocketWorker -w 4
+--access-logfile /var/log/gunicorn/access.log --error-logfile
+/var/log/gunicorn/error.log --log-level debug application:application

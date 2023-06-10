@@ -93,6 +93,7 @@ def test_1():
 
 @application.route('/endpoint', methods=['POST'])
 def handle_post():
+    print("endpoint hit")
     data = request.get_json()
     if not data or 'token' not in data:
         return jsonify({'message': 'Bad request', 'success': False}), 400
@@ -461,8 +462,8 @@ def delete_account():
 def verify_recaptcha():
     try:
         print("recaptcha hit")
-        print(request.headers)
-        print(request.data)
+        # print(request.headers)
+        # print(request.data)
         data = request.get_json()
         token = data['token']
 

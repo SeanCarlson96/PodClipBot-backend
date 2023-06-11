@@ -104,7 +104,7 @@ def handle_post():
     # For example, you could verify it or store it.
 
     # After you're done processing, return a success message.
-    return jsonify({'message': 'Request received successfully', 'success': True}), 200
+    return jsonify({'message': 'Request received successfully', 'success': token}), 200
 
 @application.route('/trim', methods=['POST'])
 def trim_video():

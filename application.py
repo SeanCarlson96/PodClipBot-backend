@@ -160,7 +160,7 @@ def trim_video():
             clip_cancel_flags.clear()
             return jsonify({'success': True, 'message': '/trim completed all clips'})
 
-    except BAD_REQUEST as e:
+    except ValueError as e:
         # This will catch errors related to the request data
         return jsonify({'success': False, 'Hmm, our bot did not like that request. Please try again.': str(e)}), 400
     except FileNotFoundError as e:

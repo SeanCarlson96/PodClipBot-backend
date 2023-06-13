@@ -9,6 +9,7 @@ from functions.add_watermark import add_watermark
 import os
 from functions.custom_logger import CancelProcessingException, MyBarLogger
 import uuid
+from flask_socketio import SocketIO
 
 __all__ = ['clip_cancel_flags']
 
@@ -35,10 +36,13 @@ def cancel_processing(clip_name, socketio_instance):
 
 def build_clip(tempdir, temp_file, start_time, end_time, clip_number, socketio, clip_info):
     print(clip_cancel_flags)
+    socketio = socketio
     clip_name = "Clip " + str(clip_number)
     if check_for_cancel(clip_name, socketio):
         return
+    
     socketio.emit('current_clip_in_edit', {'name': clip_name})
+
     # Trim the video using MoviePy
     video = VideoFileClip(temp_file)
     start_time = convert_to_seconds(start_time)

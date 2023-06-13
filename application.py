@@ -171,7 +171,8 @@ def trim_video():
         return jsonify({'success': False, 'We came across a 403 error with one of your files. Please try again.': str(e)}), 403
     except Exception as e:
         # This will catch all other types of exceptions
-        tb = traceback.format
+        tb = traceback.format_exc()
+        return jsonify({'success': False, 'We came across an error with your request. Please try again.': str(e), 'traceback.fromat_exc()': tb}), 404
 
 @application.route('/uploads/<filename>', methods=['GET'])
 def serve_file(filename):

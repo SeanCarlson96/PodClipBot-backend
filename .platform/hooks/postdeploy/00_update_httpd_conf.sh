@@ -1,5 +1,8 @@
 #!/bin/bash
 
-echo '' >> /etc/httpd/conf/httpd.conf
-echo 'IncludeOptional /opt/elasticbeanstalk/support/conf.d/*.conf' >> /etc/httpd/conf/httpd.conf
-systemctl restart httpd
+# Create and write to websocket_proxy.conf
+echo "LoadModule proxy_wstunnel_module modules/mod_proxy_wstunnel.so
+      <VirtualHost *:80>
+          ProxyPass /socket.io/ ws://127.0.0.1:8000/socket.io/
+          ProxyPassReverse /socket.io/ ws://127.0.0.1:8000/socket.io/
+      </VirtualHost>" >> /etc/httpd/conf.d/websocket_proxy.conf

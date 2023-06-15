@@ -35,6 +35,7 @@ import tempfile
 from email_validator import validate_email, EmailNotValidError
 from validate_password import validate_password
 from update_subscription import update_subscription
+from functions.delete_uploads_folder import delete_uploads_folder
 
 logging.getLogger('werkzeug').setLevel(logging.ERROR)
 logging.getLogger('socketio').setLevel(logging.ERROR)
@@ -58,19 +59,24 @@ application.config["JWT_SECRET_KEY"] = os.environ["JWT_SECRET_KEY"]
 jwt = JWTManager(application)
 
 # At the top of your script
-# client_connected = False
+client_connected = False
+active_connections = 0
 
-# @socketio.on('connect')
-# def connect():
-#     global client_connected
-#     client_connected = True
-#     # print("Client connected")
+@socketio.on('connect')
+def connect():
+    global client_connected
+    client_connected = True
+    global active_connections
+    active_connections += 1
+    print("Client connected")
 
-# @socketio.on('disconnect')
-# def disconnect():
-#     global client_connected
-#     client_connected = False
-#     # print("Client disconnected")
+@socketio.on('disconnect')
+def disconnect():
+    global client_connected
+    client_connected = False
+    global active_connections
+    active_connections -= 1
+    print("Client disconnected")
 
 @socketio.on('cancel_processing')
 def handle_cancel_processing(data):
@@ -108,13 +114,14 @@ def handle_post():
 
 @application.route('/trim', methods=['POST'])
 def trim_video():
+    print("trim hit")
     try:
         with tempfile.TemporaryDirectory() as tempdir:
-            print("Temporary directory path is:", tempdir)
+            # print("Temporary directory path is:", tempdir)
 
             video_file = request.files.get('video-file')
 
-            is_safe, message = safe_video_file(video_file, 8000)  # 500 is the maximum allowed file size in megabytes
+            is_safe, message = safe_video_file(video_file, 8000)  # 8000 is the maximum allowed file size in megabytes
             if not is_safe:
                 return jsonify({'success': False, 'message': message})
 
@@ -149,6 +156,8 @@ def trim_video():
 
             # Loop over the start time keys and extract the corresponding start and end times
             for index, start_time_key in enumerate(start_time_keys):
+                global active_connections
+                print(active_connections)
                 clip_number = start_time_key.split('-')[-1]
                 start_time = request.form.get(start_time_key)
                 end_time = request.form.get(f'end-time-{clip_number}')
@@ -176,6 +185,7 @@ def trim_video():
 
 @application.route('/uploads/<filename>', methods=['GET'])
 def serve_file(filename):
+    delete_uploads_folder()
     response = make_response(send_from_directory('uploads', filename))
     response.headers['Content-Disposition'] = f'attachment; filename={filename}'
     response.headers['Content-Type'] = 'video/mp4'

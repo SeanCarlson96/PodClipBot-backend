@@ -1,5 +1,6 @@
 # import glob
 import sys
+from uuid import uuid4
 from gevent import monkey
 monkey.patch_all()
 
@@ -36,6 +37,7 @@ from email_validator import validate_email, EmailNotValidError
 from validate_password import validate_password
 from update_subscription import update_subscription
 from functions.delete_uploads_folder import delete_uploads_folder
+from functions.create_presigned_url import create_presigned_url, retreive_video_file
 
 logging.getLogger('werkzeug').setLevel(logging.ERROR)
 logging.getLogger('socketio').setLevel(logging.ERROR)
@@ -93,10 +95,6 @@ def hello_world():
     # print(sys.path)
     return 'Backend is running!'
 
-@application.route('/test')
-def test_1():
-    return 'Test completed'
-
 @application.route('/endpoint', methods=['POST'])
 def handle_post():
     print("endpoint hit")
@@ -112,6 +110,16 @@ def handle_post():
     # After you're done processing, return a success message.
     return jsonify({'message': 'Request received successfully', 'success': token}), 200
 
+@application.route('/generate-presigned-url', methods=['POST'])
+def generate_presigned_url():
+    data = request.get_json()
+    original_filename = data.get('fileName')
+    extension = original_filename.split('.')[-1]
+    unique_filename = f"{uuid4()}.{extension}"
+
+    presigned_url = create_presigned_url('video-file-uploads', unique_filename)
+    return jsonify({'presigned_url': presigned_url, 'fileName': unique_filename})
+
 @application.route('/trim', methods=['POST'])
 def trim_video():
     print("trim hit")
@@ -119,7 +127,12 @@ def trim_video():
         with tempfile.TemporaryDirectory() as tempdir:
             # print("Temporary directory path is:", tempdir)
 
-            video_file = request.files.get('video-file')
+            # video_file = request.files.get('video-file')
+
+            socketio.emit('build_action', {'action': 'Being Retreived'})
+            video_file_name = request.form.get('video-file')
+
+            video_file = retreive_video_file(video_file_name)
 
             is_safe, message = safe_video_file(video_file, 8000)  # 8000 is the maximum allowed file size in megabytes
             if not is_safe:

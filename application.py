@@ -38,6 +38,7 @@ from validate_password import validate_password
 from update_subscription import update_subscription
 from functions.delete_uploads_folder import delete_uploads_folder
 from functions.create_presigned_url import create_presigned_url, retreive_video_file
+from werkzeug.datastructures import FileStorage
 
 logging.getLogger('werkzeug').setLevel(logging.ERROR)
 logging.getLogger('socketio').setLevel(logging.ERROR)
@@ -133,55 +134,58 @@ def trim_video():
             socketio.emit('build_action', {'action': 'Being Retreived'})
             video_file_name = request.form.get('video-file')
 
-            video_file = retreive_video_file(video_file_name)
-
-            is_safe, message = safe_video_file(video_file, 8000)  # 8000 is the maximum allowed file size in megabytes
-            if not is_safe:
-                return jsonify({'success': False, 'message': message})
-
-            temp_file = os.path.join(tempdir, 'temp.mp4')
-            video_file.save(temp_file)
+            downloaded_video_file_path = retreive_video_file(video_file_name, tempdir)
             
-            # Convert request.form into a regular dictionary, excluding start and end time data
-            clip_info = {key: value for key, value in request.form.items() if not key.startswith(('start-time-', 'end-time-'))}
+            with open(downloaded_video_file_path, 'rb') as fp:
+                video_file = FileStorage(fp, filename=video_file_name)
 
-            music_file = request.files.get('music-file')
-            if music_file:
-                is_safe, message = safe_music_file(music_file, 200)
+                is_safe, message = safe_video_file(video_file, 8000)  # 8000 is the maximum allowed file size in megabytes
                 if not is_safe:
                     return jsonify({'success': False, 'message': message})
+
+                temp_file = os.path.join(tempdir, 'temp.mp4')
+                video_file.save(temp_file)
                 
-                music_temp_file = os.path.join(tempdir, 'temp_music.mp3')
-                music_file.save(music_temp_file)
-                clip_info['music_file_path'] = music_temp_file
+                # Convert request.form into a regular dictionary, excluding start and end time data
+                clip_info = {key: value for key, value in request.form.items() if not key.startswith(('start-time-', 'end-time-'))}
+
+                music_file = request.files.get('music-file')
+                if music_file:
+                    is_safe, message = safe_music_file(music_file, 200)
+                    if not is_safe:
+                        return jsonify({'success': False, 'message': message})
+                    
+                    music_temp_file = os.path.join(tempdir, 'temp_music.mp3')
+                    music_file.save(music_temp_file)
+                    clip_info['music_file_path'] = music_temp_file
 
 
-            watermark_file = request.files.get('watermark-file')
-            if watermark_file:
-                is_safe, message = safe_watermark_file(watermark_file, 20)
-                if not is_safe:
-                    return jsonify({'success': False, 'message': message})
-                watermark_temp_file = os.path.join(tempdir, 'temp_watermark.png')
-                watermark_file.save(watermark_temp_file)
-                clip_info['watermark_file_path'] = watermark_temp_file
+                watermark_file = request.files.get('watermark-file')
+                if watermark_file:
+                    is_safe, message = safe_watermark_file(watermark_file, 20)
+                    if not is_safe:
+                        return jsonify({'success': False, 'message': message})
+                    watermark_temp_file = os.path.join(tempdir, 'temp_watermark.png')
+                    watermark_file.save(watermark_temp_file)
+                    clip_info['watermark_file_path'] = watermark_temp_file
 
-            # Get all keys in the form data that start with 'start-time-'
-            start_time_keys = [key for key in request.form.keys() if key.startswith('start-time-')]
+                # Get all keys in the form data that start with 'start-time-'
+                start_time_keys = [key for key in request.form.keys() if key.startswith('start-time-')]
 
-            # Loop over the start time keys and extract the corresponding start and end times
-            for index, start_time_key in enumerate(start_time_keys):
-                global active_connections
-                print(active_connections)
-                clip_number = start_time_key.split('-')[-1]
-                start_time = request.form.get(start_time_key)
-                end_time = request.form.get(f'end-time-{clip_number}')
-                socketio.emit('build_action', {'action': 'Building'})
+                # Loop over the start time keys and extract the corresponding start and end times
+                for index, start_time_key in enumerate(start_time_keys):
+                    global active_connections
+                    print(active_connections)
+                    clip_number = start_time_key.split('-')[-1]
+                    start_time = request.form.get(start_time_key)
+                    end_time = request.form.get(f'end-time-{clip_number}')
+                    socketio.emit('build_action', {'action': 'Building'})
 
-                build_clip(tempdir, temp_file, start_time, end_time, clip_number, socketio, clip_info)
+                    build_clip(tempdir, temp_file, start_time, end_time, clip_number, socketio, clip_info)
 
-            global clip_cancel_flags
-            clip_cancel_flags.clear()
-            return jsonify({'success': True, 'message': '/trim completed all clips'})
+                global clip_cancel_flags
+                clip_cancel_flags.clear()
+                return jsonify({'success': True, 'message': '/trim completed all clips'})
 
     except ValueError as e:
         # This will catch errors related to the request data
@@ -195,7 +199,7 @@ def trim_video():
     except Exception as e:
         # This will catch all other types of exceptions
         tb = traceback.format_exc()
-        return jsonify({'success': False, 'We came across an error with your request. Please try again.': str(e), 'traceback.fromat_exc()': tb}), 404
+        return jsonify({'success': False, 'We came across an error with your request. Please try again.': str(e), 'traceback.fromat_exc()': tb}), 500
 
 @application.route('/uploads/<filename>', methods=['GET'])
 def serve_file(filename):

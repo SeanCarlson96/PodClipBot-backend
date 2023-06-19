@@ -110,22 +110,15 @@ def handle_post():
     # After you're done processing, return a success message.
     return jsonify({'message': 'Request received successfully', 'success': token}), 200
 
-def create_presigned_url(bucket_name, object_name, expiration=3600):
-    """Generate a presigned URL to share an S3 object"""
-    s3_client = boto3.client('s3')
-    
-    try:
-        response = s3_client.generate_presigned_url('put_object',
-                                                    Params={'Bucket': bucket_name,
-                                                            'Key': object_name},
-                                                    ExpiresIn=expiration)
-    except ClientError as e:
-        logging.error(e)
-        return None
+@application.route('/generate-presigned-url', methods=['POST'])
+def generate_presigned_url():
+    data = request.get_json()
+    original_filename = data.get('fileName')
+    extension = original_filename.split('.')[-1]
+    unique_filename = f"{uuid4()}.{extension}"
 
-    # If response was successful, return the presigned URL
-    logging.info(f'Generated presigned URL: {response}')
-    return response
+    presigned_url = create_presigned_url('video-file-uploads', unique_filename)
+    return jsonify({'presigned_url': presigned_url, 'fileName': unique_filename})
 
 
 @application.route('/trim', methods=['POST'])

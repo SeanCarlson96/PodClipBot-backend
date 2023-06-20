@@ -18,6 +18,6 @@ phases:
 artifacts:
   files:
     - '**/*'
-  exclude:
+  exclude-paths:
     - '*.git*'
     - 'buildspec.yml'

@@ -139,7 +139,7 @@ def trim_video():
             with open(downloaded_video_file_path, 'rb') as fp:
                 video_file = FileStorage(fp, filename=video_file_name)
 
-                is_safe, message = safe_video_file(video_file, 8000)  # 8000 is the maximum allowed file size in megabytes
+                is_safe, message = safe_video_file(video_file, 5000)  # 5000 is the maximum allowed file size in megabytes
                 if not is_safe:
                     return jsonify({'success': False, 'message': message})
 

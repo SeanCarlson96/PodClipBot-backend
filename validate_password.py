@@ -10,7 +10,7 @@ def validate_password(password):
         return jsonify({"message": "Password must contain at least one uppercase letter."}), 400
     elif not re.search("[0-9]", password):
         return jsonify({"message": "Password must contain at least one digit."}), 400
-    elif not re.search("[~!@#$%^&*()_+\-={}[]|\\:;\"'<>,.?/]", password):
+    elif not re.search("[~!@#$%^&*()_+\\-=\\[\\]{}|\\:;\"'<>,.?/]", password):
         return jsonify({"message": "Password must contain at least one special character."}), 400
     else:
         return True

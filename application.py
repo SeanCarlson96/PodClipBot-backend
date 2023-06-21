@@ -129,7 +129,6 @@ def generate_presigned_url():
     presigned_url = create_presigned_url('video-file-uploads', unique_filename)
     return jsonify({'presigned_url': presigned_url, 'fileName': unique_filename})
 
-
 @application.route('/trim', methods=['POST'])
 def trim_video():
     print("trim hit")
@@ -196,7 +195,7 @@ def trim_video():
                     start_time = request.form.get(start_time_key)
                     end_time = request.form.get(f'end-time-{clip_number}')
                     socketio.emit('build_action', {'action': 'Building'})
-
+                    # print(clip_info)
                     build_clip(tempdir, temp_file, start_time, end_time, clip_number, socketio, clip_info)
 
                 global clip_cancel_flags

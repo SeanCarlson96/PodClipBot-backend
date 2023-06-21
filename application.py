@@ -134,18 +134,22 @@ def generate_presigned_url():
 def trim_video():
     print("trim hit")
     try:
-        temp_dir_path = os.path.join(os.getcwd(), 'tempdir')
-        os.makedirs(temp_dir_path, exist_ok=True)
+        # temp_dir_path = os.path.join(os.getcwd(), 'tempdir')
+        # os.makedirs(temp_dir_path, exist_ok=True)
 
-        with tempfile.TemporaryDirectory(dir=temp_dir_path) as tempdir:
-        # with tempfile.TemporaryDirectory() as tempdir:
+        # with tempfile.TemporaryDirectory(dir=temp_dir_path) as tempdir:
+        with tempfile.TemporaryDirectory() as tempdir:
             # print("Temporary directory path is:", tempdir)
 
             # video_file = request.files.get('video-file')
 
             video_file_name = request.form.get('video-file')
 
-            socketio.emit('build_action', {'action': 'Being Retreived'})
+            # try:
+            #     socketio.emit('build_action', {'action': 'Being Retreived'})
+            # except Exception as e:
+            #     print(f"Error while emitting: {e}")
+
             downloaded_video_file_path = retreive_video_file(video_file_name, tempdir)
             
             with open(downloaded_video_file_path, 'rb') as fp:

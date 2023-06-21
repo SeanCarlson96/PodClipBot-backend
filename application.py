@@ -139,9 +139,9 @@ def trim_video():
 
             # video_file = request.files.get('video-file')
 
-            socketio.emit('build_action', {'action': 'Being Retreived'})
             video_file_name = request.form.get('video-file')
 
+            socketio.emit('build_action', {'action': 'Being Retreived'})
             downloaded_video_file_path = retreive_video_file(video_file_name, tempdir)
             
             with open(downloaded_video_file_path, 'rb') as fp:

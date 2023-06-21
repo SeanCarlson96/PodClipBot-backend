@@ -134,7 +134,11 @@ def generate_presigned_url():
 def trim_video():
     print("trim hit")
     try:
-        with tempfile.TemporaryDirectory() as tempdir:
+        temp_dir_path = os.path.join(os.getcwd(), 'tempdir')
+        os.makedirs(temp_dir_path, exist_ok=True)
+
+        with tempfile.TemporaryDirectory(dir=temp_dir_path) as tempdir:
+        # with tempfile.TemporaryDirectory() as tempdir:
             # print("Temporary directory path is:", tempdir)
 
             # video_file = request.files.get('video-file')

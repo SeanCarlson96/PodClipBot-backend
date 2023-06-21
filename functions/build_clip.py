@@ -94,9 +94,11 @@ def build_clip(tempdir, temp_file, start_time, end_time, clip_number, socketio, 
     
     my_bar_logger = MyBarLogger(socketio, clip_cancel_flags, clip_name)
     socketio.emit('build_action', {'action': 'Writing'})
+    upload_dir = os.path.join('uploads')
+    os.makedirs(upload_dir, exist_ok=True)
     try:
         video.write_videofile(
-            os.path.join('uploads', trimmed_file),
+            os.path.join(upload_dir, trimmed_file),
             codec='libx264',
             audio_codec='aac',
             logger=my_bar_logger

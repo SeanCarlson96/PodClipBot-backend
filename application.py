@@ -91,10 +91,18 @@ def handle_cancel_processing(data):
 import os
 import tempfile
 
+import subprocess
+
 @application.route('/')
-def hello_world():
-    # print(sys.path)
-    return 'Backend is running!'
+def ffmpeg_test():
+    try:
+        result = subprocess.run(["ffmpeg", "-version"], capture_output=True, text=True)
+        return jsonify({"ffmpeg_output": result.stdout})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+# def hello_world():
+#     # print(sys.path)
+#     return 'Backend is running!'
 
 @application.route('/endpoint', methods=['POST'])
 def handle_post():

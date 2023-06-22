@@ -104,6 +104,10 @@ def ffmpeg_test():
 #     # print(sys.path)
 #     return 'Backend is running!'
 
+@application.route('/sitemap.xml', methods=['GET'])
+def sitemap():
+    return send_from_directory(application.root_path, 'sitemap.xml', mimetype='application/xml')
+
 @application.route('/endpoint', methods=['POST'])
 def handle_post():
     print("endpoint hit")

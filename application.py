@@ -8,7 +8,7 @@ from http.client import BAD_REQUEST
 # from json import dumps
 # import pprint
 import traceback
-from flask import Flask, jsonify, request, send_from_directory, make_response, Response
+from flask import Flask, jsonify, render_template_string, request, send_from_directory, make_response, Response
 from flask_cors import CORS
 from auth_decorator import jwt_required
 import time
@@ -39,6 +39,7 @@ from update_subscription import update_subscription
 from functions.delete_uploads_folder import delete_uploads_folder
 from functions.create_presigned_url import create_presigned_url, retreive_video_file
 from werkzeug.datastructures import FileStorage
+import csv
 
 logging.getLogger('werkzeug').setLevel(logging.ERROR)
 logging.getLogger('socketio').setLevel(logging.ERROR)
@@ -103,6 +104,25 @@ def ffmpeg_test():
 # def hello_world():
 #     # print(sys.path)
 #     return 'Backend is running!'
+
+import pandas as pd
+
+@application.route('/issues', methods=['POST', 'GET'])
+def submit_issue():
+    if request.method == 'POST':
+        data = request.get_json()
+        issue = data.get('issue')
+        # timestamp = datetime.fromisoformat(data.get('timestamp').replace('Z', '+00:00'))
+        timestamp = data.get('timestamp')
+
+        with open('issues.csv', 'a', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow([timestamp, issue])
+
+        return {'message': 'Issue submitted successfully'}, 201
+    else:
+        df = pd.read_csv('issues.csv', header=None, names=['Timestamp', 'Issue'])
+        return render_template_string(df.to_html(index=False))
 
 @application.route('/sitemap.xml', methods=['GET'])
 def sitemap():
@@ -290,7 +310,7 @@ def register():
                     'musicDuration': 100,
                     'watermarkPositionHorizontal': "center",
                     'watermarkPositionVertical': 25,
-                    'watermarkSize': 200,
+                    'watermarkSize': 300,
                     'watermarkOpacity': 100,
                     'watermarkDuration': 100,
                 }

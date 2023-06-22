@@ -44,7 +44,8 @@ def add_watermark(video, clip_info):
         watermark_path = "watermarks/PCB_3.png"
         size_divider = 5000
     elif clip_info.get('subscription') == 'none':
-        watermark_path = "watermarks/PCB_fv_4.png"
+        # watermark_path = "watermarks/PCB_fv_4.png"
+        watermark_path = "watermarks/PCB_d_1.png"
         size_divider = 3500
     else:
         video = CompositeVideoClip([video])
@@ -54,7 +55,7 @@ def add_watermark(video, clip_info):
     position_percent_vertical = int(clip_info.get('watermarkPositionVertical', '25'))
     position_vertical = ((100 - position_percent_vertical)) / 100
     custom_upload = clip_info.get('watermark_file_path', None)
-    height_ratio = int(clip_info.get('watermarkSize', '200')) / size_divider # Calculate watermark size ratio
+    height_ratio = int(clip_info.get('watermarkSize', '300')) / size_divider # Calculate watermark size ratio
     opacity_percent = int(clip_info.get('watermarkOpacity', '100'))
     opacity = opacity_percent / 100
     duration = int(clip_info.get('watermarkDuration', '100'))

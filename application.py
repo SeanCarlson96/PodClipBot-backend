@@ -536,19 +536,22 @@ def verify_recaptcha():
 def create_checkout_session():
     print("checkout created")
     data = request.get_json()
+    print(data)
     try:
         user_id = data['userId']
         priceId = data['priceId']
-        
+        print('1')
         stripe_price_id = priceId
 
         # Retrieve user with the specified id
         user = User.objects(id=user_id).first()
+        print('2')
 
         if user is None:
             return jsonify({'message': 'User not found'}), 404
 
         stripe_customer_id = user.stripe_customer_id
+        print('3')
 
         if not stripe_customer_id:
             # Create new customer in Stripe

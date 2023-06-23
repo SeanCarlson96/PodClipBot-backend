@@ -42,15 +42,15 @@ def assign_speaker(words):
 
     return words
 
-def diarized_subtitles(tempdir, socketio, clip_info, device, audio_file, result_aligned, segment_length, video, font, font_size, subtitle_color, background_color, font_stroke_width, font_stroke_color, position_horizontal, position_vertical):
+def diarized_subtitles(tempdir, socketio, clip_info, device, audio_file, result_aligned, segment_length, video, font, font_size, subtitle_color, background_color, font_stroke_width, font_stroke_color, position_horizontal, position_vertical, socket_id):
     hf_token = os.environ["HF_TOKEN"]
 
-    socketio.emit('video_processing_progress', {'progress': 21})
+    socketio.emit('video_processing_progress', {'progress': 21}, room=socket_id)
 
     diarize_model = whisperx.DiarizationPipeline(use_auth_token=hf_token, device=device)
     diarize_segments = diarize_model(audio_file) # this is the line that takes a long time
 
-    socketio.emit('video_processing_progress', {'progress': 30})
+    socketio.emit('video_processing_progress', {'progress': 30}, room=socket_id)
 
     videoDuration = video.duration
 

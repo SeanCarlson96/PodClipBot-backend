@@ -67,6 +67,7 @@ jwt = JWTManager(application)
 # At the top of your script
 client_connected = False
 active_connections = 0
+connected_users = set()
 
 @socketio.on('connect')
 def connect():
@@ -74,6 +75,11 @@ def connect():
     client_connected = True
     global active_connections
     active_connections += 1
+
+    user_id = request.sid
+    connected_users.add(user_id)
+    socketio.server.enter_room(user_id, user_id)
+
     print("Client connected")
 
 @socketio.on('disconnect')
@@ -82,7 +88,18 @@ def disconnect():
     client_connected = False
     global active_connections
     active_connections -= 1
+
+    user_id = request.sid
+    if user_id in connected_users:  # Check if the user_id is in the set of connected users
+        connected_users.remove(user_id)  # Remove the user_id from the set of connected users
+    socketio.server.leave_room(request.sid, user_id)
+
     print("Client disconnected")
+
+@socketio.on('get_sid')
+def send_sid():
+    # when 'get_sid' event is received, respond with 'your_sid' event that includes the sid
+    socketio.emit('your_sid', {'sid': request.sid})
 
 @socketio.on('cancel_processing')
 def handle_cancel_processing(data):
@@ -170,6 +187,12 @@ def trim_video():
 
             video_file_name = request.form.get('video-file')
 
+            # Extract user_id from the POST data
+            socket_id = request.form.get('user_id')
+
+            if socket_id not in connected_users:
+                return jsonify({'success': False, 'message': 'Invalid user ID. Please ensure you are connected.'}), 400
+
             # try:
             #     socketio.emit('build_action', {'action': 'Being Retreived'})
             # except Exception as e:
@@ -220,9 +243,9 @@ def trim_video():
                     clip_number = start_time_key.split('-')[-1]
                     start_time = request.form.get(start_time_key)
                     end_time = request.form.get(f'end-time-{clip_number}')
-                    socketio.emit('build_action', {'action': 'Building'})
+                    socketio.emit('build_action', {'action': 'Building'}, room=socket_id)
                     # print(clip_info)
-                    build_clip(tempdir, temp_file, start_time, end_time, clip_number, socketio, clip_info)
+                    build_clip(tempdir, temp_file, start_time, end_time, clip_number, socketio, clip_info, socket_id)
 
                 global clip_cancel_flags
                 clip_cancel_flags.clear()

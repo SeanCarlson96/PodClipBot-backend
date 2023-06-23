@@ -5,5 +5,8 @@ echo 'LoadModule proxy_wstunnel_module modules/mod_proxy_wstunnel.so
 ProxyPass /socket.io/ ws://127.0.0.1:8000/socket.io/
 ProxyPassReverse /socket.io/ ws://127.0.0.1:8000/socket.io/' >> /etc/httpd/conf.d/websocket_proxy.conf
 
+# Create and write to timeout.conf
+echo 'ProxyTimeout 600' >> /etc/httpd/conf.d/timeout.conf
+
 # Restart the httpd service to apply changes
 systemctl restart httpd

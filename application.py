@@ -99,14 +99,15 @@ def disconnect():
 @socketio.on('get_sid')
 def send_sid():
     # when 'get_sid' event is received, respond with 'your_sid' event that includes the sid
-    socketio.emit('your_sid', {'sid': request.sid})
+    socketio.emit('your_sid', {'sid': request.sid}, room=request.sid)
 
 @socketio.on('cancel_processing')
 def handle_cancel_processing(data):
     clip_name = data['clipName']
+    socket_id = data['socketId']
     print(f"Canceling clip {clip_name}")
-    socketio.emit('video_processing_progress', {'progress': 0})
-    cancel_processing(clip_name, socketio)
+    socketio.emit('video_processing_progress', {'progress': 0}, room=socket_id)
+    cancel_processing(clip_name, socketio, socket_id)
 
 import os
 import tempfile

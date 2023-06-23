@@ -101,6 +101,7 @@ def build_clip(tempdir, temp_file, start_time, end_time, clip_number, socketio, 
             os.path.join(upload_dir, trimmed_file),
             codec='libx264',
             audio_codec='aac',
+            bitrate='8000k',  # This sets the bitrate to 8000 kb/s. Added this to hopefully fix the corruption on upload issue with YouTube. This might need to be a calutaed value based on the 
             logger=my_bar_logger
         )
     except CancelProcessingException as e:

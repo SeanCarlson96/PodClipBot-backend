@@ -92,7 +92,7 @@ def build_clip(tempdir, temp_file, start_time, end_time, clip_number, socketio, 
     # Write edited video to the file name
     trimmed_file = f'clip{clip_number}_{unique_id}.mp4'
     
-    my_bar_logger = MyBarLogger(socketio, clip_cancel_flags, clip_name)
+    my_bar_logger = MyBarLogger(socketio, clip_cancel_flags, clip_name, socket_id)
     socketio.emit('build_action', {'action': 'Writing'}, room=socket_id)
     upload_dir = os.path.join('uploads')
     os.makedirs(upload_dir, exist_ok=True)

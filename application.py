@@ -67,20 +67,48 @@ jwt = JWTManager(application)
 # At the top of your script
 client_connected = False
 active_connections = 0
-connected_users = set()
+# connected_users = set()
+connected_users = {}
 
-@socketio.on('connect')
-def connect():
+# @socketio.on('connect')
+# def connect():
+#     global client_connected
+#     client_connected = True
+#     global active_connections
+#     active_connections += 1
+
+#     user_id = request.sid
+#     connected_users.add(user_id)
+#     socketio.server.enter_room(user_id, user_id)
+
+#     print("Client connected")
+
+# @socketio.on('disconnect')
+# def disconnect():
+#     global client_connected
+#     client_connected = False
+#     global active_connections
+#     active_connections -= 1
+
+#     user_id = request.sid
+#     if user_id in connected_users:  # Check if the user_id is in the set of connected users
+#         connected_users.remove(user_id)  # Remove the user_id from the set of connected users
+#     socketio.server.leave_room(request.sid, user_id)
+
+#     print("Client disconnected")
+
+@socketio.on('user_connected')
+def user_connected(data):
     global client_connected
     client_connected = True
     global active_connections
     active_connections += 1
 
-    user_id = request.sid
-    connected_users.add(user_id)
-    socketio.server.enter_room(user_id, user_id)
+    user_id = data['userId']  # We get the userId from the data sent by the client
+    connected_users[user_id] = request.sid  # We map the userId to the sid
+    socketio.server.enter_room(request.sid, user_id)  # The client joins a room identified by their userId
 
-    print("Client connected")
+    print("User connected with ID: ", user_id)
 
 @socketio.on('disconnect')
 def disconnect():
@@ -89,17 +117,17 @@ def disconnect():
     global active_connections
     active_connections -= 1
 
-    user_id = request.sid
-    if user_id in connected_users:  # Check if the user_id is in the set of connected users
-        connected_users.remove(user_id)  # Remove the user_id from the set of connected users
-    socketio.server.leave_room(request.sid, user_id)
+    user_id = next((k for k, v in connected_users.items() if v == request.sid), None)
+    if user_id:  # Check if the user_id is in the set of connected users
+        del connected_users[user_id]  # Remove the user_id from the dictionary of connected users
+        socketio.server.leave_room(request.sid, user_id)  # The client leaves the room identified by their userId
 
-    print("Client disconnected")
+    print("User disconnected with ID: ", user_id)
 
-@socketio.on('get_sid')
-def send_sid():
-    # when 'get_sid' event is received, respond with 'your_sid' event that includes the sid
-    socketio.emit('your_sid', {'sid': request.sid}, room=request.sid)
+# @socketio.on('get_sid')
+# def send_sid():
+#     # when 'get_sid' event is received, respond with 'your_sid' event that includes the sid
+#     socketio.emit('your_sid', {'sid': request.sid}, room=request.sid)
 
 @socketio.on('cancel_processing')
 def handle_cancel_processing(data):
@@ -188,11 +216,18 @@ def trim_video():
 
             video_file_name = request.form.get('video-file')
 
-            # Extract user_id from the POST data
-            socket_id = request.form.get('user_id')
+            # # Extract user_id from the POST data
+            # socket_id = request.form.get('user_id')
 
+            # if socket_id not in connected_users:
+            #     return jsonify({'success': False, 'message': 'Invalid user ID. Please ensure you are connected.'}), 400
+
+            socket_id = request.form.get('user_id')
+            print(connected_users)
+            print(socket_id)
             if socket_id not in connected_users:
                 return jsonify({'success': False, 'message': 'Invalid user ID. Please ensure you are connected.'}), 400
+
 
             # try:
             #     socketio.emit('build_action', {'action': 'Being Retreived'})

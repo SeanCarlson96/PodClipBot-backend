@@ -28,13 +28,13 @@ def create_subtitle_clip(srt_filename, color, font, font_size, background_color,
 def diarized_subtitles(clip_info, device, audio_file, result_aligned, segment_length, video, font, font_size, subtitle_color, background_color, font_stroke_width, font_stroke_color, position_horizontal, position_vertical):
     second_speaker_color = clip_info.get('secondSpeakerColor', 'yellow')
     hf_token = os.environ["HF_TOKEN"]
-    print('hi')
+
     # 3. Assign speaker labels
     diarize_model = whisperx.DiarizationPipeline(use_auth_token=hf_token, device=device)
-    print('2')
+    
     # add min/max number of speakers if known
     diarize_segments = diarize_model(audio_file)
-    print('3')
+    
     # diarize_model(audio_file, min_speakers=min_speakers, max_speakers=max_speakers)
     result = whisperx.assign_word_speakers(diarize_segments, result_aligned)
 

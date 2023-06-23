@@ -51,7 +51,9 @@ application = Flask(__name__)
 CORS(application)
 # CORS(application, resources={r"/*": {"origins": os.environ["FRONTEND_URL"]}})
 # socketio = SocketIO(application, cors_allowed_origins=os.environ["FRONTEND_URL"])
-socketio = SocketIO(application, cors_allowed_origins=os.environ["FRONTEND_URL"], async_mode='gevent')
+rabbitmq_url = os.getenv('RABBITMQ_URL')
+socketio = SocketIO(application, cors_allowed_origins=os.environ["FRONTEND_URL"], async_mode='gevent', message_queue=rabbitmq_url)
+
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
 application.config["MONGODB_SETTINGS"] = {
     'db': 'Cluster0',

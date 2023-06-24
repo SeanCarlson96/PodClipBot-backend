@@ -230,7 +230,7 @@ def trim_video():
 
 
             # try:
-            #     socketio.emit('build_action', {'action': 'Being Retreived'})
+            #     socketio.emit('build_action', {'action': 'Retrieving'})
             # except Exception as e:
             #     print(f"Error while emitting: {e}")
 
@@ -299,7 +299,7 @@ def trim_video():
     except Exception as e:
         # This will catch all other types of exceptions
         tb = traceback.format_exc()
-        return jsonify({'success': False, 'We came across an error with your request. Please try again.': str(e), 'traceback.fromat_exc()': tb}), 500
+        return jsonify({'success': False, 'Misc Error': str(e), 'traceback.fromat_exc()': tb}), 500
 
 @application.route('/uploads/<filename>', methods=['GET'])
 def serve_file(filename):

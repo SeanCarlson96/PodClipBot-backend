@@ -96,14 +96,76 @@ def build_clip(tempdir, temp_file, start_time, end_time, clip_number, socketio, 
     socketio.emit('build_action', {'action': 'Writing'}, room=socket_id)
     upload_dir = os.path.join('uploads')
     os.makedirs(upload_dir, exist_ok=True)
+    # try:
+    #     video.write_videofile(
+    #         os.path.join(upload_dir, trimmed_file),
+    #         codec='libx264',
+    #         audio_codec='aac',
+    #         bitrate='8000k',  # This sets the bitrate to 8000 kb/s. Added this to hopefully fix the corruption on upload issue with YouTube. This might need to be a calutaed value based on the 
+    #         logger=my_bar_logger
+    #     )
+    # Get properties of the original video
+    original_fps = video.fps or 30  # Fallback to 30 if original frame rate isn't available
+
+    # Determine video resolution
+    height = video.size[1]
+    if height >= 2160:
+        resolution = '4k'
+    elif height >= 1440:
+        resolution = '2k'
+    elif height >= 1080:
+        resolution = '1080p'
+    elif height >= 720:
+        resolution = '720p'
+    elif height >= 480:
+        resolution = '480p'
+    else:
+        resolution = '360p'
+
+    # Bitrate calculation based on YouTube recommendations
+    if resolution == '4k':
+        bitrate = '45000k' if original_fps > 30 else '35000k'
+    elif resolution == '2k':
+        bitrate = '24000k' if original_fps > 30 else '16000k'
+    elif resolution == '1080p':
+        bitrate = '12000k' if original_fps > 30 else '8000k'
+    elif resolution == '720p':
+        bitrate = '7500k' if original_fps > 30 else '5000k'
+    elif resolution == '480p':
+        bitrate = '2500k'
+    else:
+        bitrate = '1000k'
+
+    # Calculate appropriate H.264 level based on frame rate
+    if original_fps > 30:
+        h264_level = '4.2'
+    else:
+        h264_level = '4.0'
+
+    # Make sure dimensions are divisible by 2
+    width, height = video.size
+    if width % 2 != 0:
+        width -= 1
+    if height % 2 != 0:
+        height -= 1
+
+    # Resize the video
+    video = video.resize((width, height))
+
     try:
+        # Write video file with adjusted settings
         video.write_videofile(
             os.path.join(upload_dir, trimmed_file),
             codec='libx264',
             audio_codec='aac',
-            bitrate='8000k',  # This sets the bitrate to 8000 kb/s. Added this to hopefully fix the corruption on upload issue with YouTube. This might need to be a calutaed value based on the 
+            bitrate=bitrate,
+            fps=original_fps,
+            preset='veryfast',  # Adjust this as needed
+            # threads=4,  # Adjust this based on how many CPU cores you want to use
+            ffmpeg_params=["-profile:v", "high", "-level:v", h264_level, "-pix_fmt", "yuv420p"],
             logger=my_bar_logger
         )
+
     except CancelProcessingException as e:
         print(str(e))
         socketio.emit('processing_canceled', {'clipName': clip_name}, room=socket_id)

@@ -52,8 +52,12 @@ def build_clip(tempdir, temp_file, start_time, end_time, clip_number, socketio, 
     video = video.subclip(start_time, end_time)
     if check_for_cancel(clip_name, socketio, socket_id):
         return
+    
+    
     # Center and crop to 9:16
     video = center_and_crop(video)
+
+
     if check_for_cancel(clip_name, socketio, socket_id):
         return
     print(start_time, end_time)

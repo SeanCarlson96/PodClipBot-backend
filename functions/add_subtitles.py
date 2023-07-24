@@ -18,9 +18,7 @@ from functions.profanity_filter import check_profanity
 def send_progress_update(socketio, progress, socket_id):
     socketio.emit('video_processing_progress', {'progress': progress}, room=socket_id)
 
-def add_subtitles(tempdir, video, audio_filename, clip_info, socketio, socket_id):
-
-    send_progress_update(socketio, 3, socket_id)
+def add_subtitles(tempdir, video, audio_filename, clip_info):
 
     font = clip_info.get('font', 'Arial-Bold-Italic')
     font_size = int(clip_info.get('fontSize', '15')) * 3
@@ -43,19 +41,14 @@ def add_subtitles(tempdir, video, audio_filename, clip_info, socketio, socket_id
 
     videoDuration = video.duration
     
-    send_progress_update(socketio, 6, socket_id)
     # Get transcription segments using whisper
     device = "cpu"
     audio_file = audio_filename
     batch_size = 16 # reduce if low on GPU mem
     compute_type = "int8" #try changing to float16 after development
-
-    # model = whisperx.load_model("large-v2", device, compute_type=compute_type)
     
-    send_progress_update(socketio, 9, socket_id)
-    model = whisperx.load_model("large-v2", device, compute_type=compute_type, language='en')
+    model = whisperx.load_model("medium", device, compute_type=compute_type, language='en', download_root="/tmp/whisperx")
     
-    send_progress_update(socketio, 12, socket_id)
     # print('after whisperx.load_model')
     audio = whisperx.load_audio(audio_file)
     result = model.transcribe(audio, batch_size=batch_size)
@@ -63,7 +56,6 @@ def add_subtitles(tempdir, video, audio_filename, clip_info, socketio, socket_id
     # load alignment model and metadata
     model_a, metadata = whisperx.load_align_model(language_code=result["language"], device=device)
 
-    send_progress_update(socketio, 15, socket_id)
     # align whisper output
     # result_align = whisperx.align(result["segments"], model_a, metadata, audio, device, return_char_alignments=True)
     result_aligned = whisperx.align(result["segments"], model_a, metadata, audio, device, return_char_alignments=False)
@@ -73,10 +65,7 @@ def add_subtitles(tempdir, video, audio_filename, clip_info, socketio, socket_id
     # print(result_aligned)
 
 
-    send_progress_update(socketio, 18, socket_id)
-    
     if diarization:
-        socketio.emit('build_action', {'action': 'Diarizing'}, room=socket_id)
         video_with_subtitles = diarized_subtitles(tempdir, socketio, clip_info, device, audio_file, result_aligned, segment_length, video, font, font_size, subtitle_color, background_color, font_stroke_width, font_stroke_color, position_horizontal, position_vertical, socket_id)
     else:
         segments = result_aligned['word_segments']

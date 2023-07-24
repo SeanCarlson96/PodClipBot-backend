@@ -1,0 +1,36 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Resources:  
+  ############### Lambda Functions #######################
+  BuildClipFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      ImageConfig:
+        Command: ["functions.build_clip_lambda.lambda_handler"]
+      Timeout: 900 #max timeout
+      MemorySize: 10240 #max memory size. Might need to change?
+      Events:
+        MyApiEvent:
+          Type: Api
+          Properties:
+            Path: /pcb/build-clip
+            Method: POST
+            RestApiId: !Ref VideoAPI
+    Metadata:
+      DockerTag: v1
+      DockerContext: .
+      Dockerfile: Dockerfile
+
+  ################## Video API ###########################
+  VideoAPI:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+
+################ Outputs ##########################
+#Outputs:
+#  ApiEndpoint:
+#    Description: URL endpoint for the API
+#    Value: !Sub 'https://${VideoAPI}.execute-api.${AWS::Region}.amazonaws.com/prod/pod-clip-bot-api'

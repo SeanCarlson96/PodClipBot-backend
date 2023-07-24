@@ -6,4 +6,5 @@ venv311/
 .env
 
 SPEAKER_*
-temp*
+temp/*
+.aws-sam/

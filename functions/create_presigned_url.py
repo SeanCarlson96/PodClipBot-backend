@@ -23,6 +23,16 @@ def retreive_video_file(video_name, destination_dir):
         return None
     return local_file_path  # return the full path, not just the filename
 
+def upload_video_file(video_name: str, destination_dir: str):
+    """Upload video file to S3 bucket"""
+    s3 = boto3.client('s3')
+    transfer_config = TransferConfig(use_threads=False)
+    transfer = S3Transfer(s3, transfer_config)
+    try:
+        print("Video name: ", video_name)
+        transfer.upload_file(video_name, 'video-file-uploads', destination_dir, callback=progress_callback)
+    except NoCredentialsError:
+        print("No AWS credentials were found.")
 
 def create_presigned_url(bucket_name, object_name, expiration=10000):
     """Generate a presigned URL S3 PUT request"""

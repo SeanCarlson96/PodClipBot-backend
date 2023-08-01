@@ -1,4 +1,6 @@
 # import glob
+import pandas as pd
+import os
 import sys
 from uuid import uuid4
 from gevent import monkey
@@ -17,8 +19,6 @@ from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, get_jwt_identity
 from jwt.exceptions import PyJWTError
 from jwt import decode
-from file_security_functions.safe_image_file import safe_watermark_file
-from file_security_functions.safe_music_file import safe_music_file
 from models import User
 from flask_jwt_extended import create_access_token
 import os
@@ -27,18 +27,16 @@ from flask_socketio import SocketIO
 import logging
 from flask_mail import Mail, Message
 import datetime
-from functions.build_clip import build_clip, cancel_processing, clip_cancel_flags
-from file_security_functions.safe_video_file import safe_video_file
+from functions.build_clip import cancel_processing, clip_cancel_flags
 # import httpx
 import requests
 import stripe
-import tempfile
 from email_validator import validate_email, EmailNotValidError
 from validate_password import validate_password
 from update_subscription import update_subscription
 from functions.delete_uploads_folder import delete_uploads_folder
-from functions.create_presigned_url import create_presigned_url, retreive_video_file
-from werkzeug.datastructures import FileStorage
+from functions.create_presigned_url import create_presigned_url
+from util.stepfunction import start_step_function
 import csv
 
 logging.getLogger('werkzeug').setLevel(logging.ERROR)
@@ -70,33 +68,6 @@ active_connections = 0
 # connected_users = set()
 connected_users = {}
 
-# @socketio.on('connect')
-# def connect():
-#     global client_connected
-#     client_connected = True
-#     global active_connections
-#     active_connections += 1
-
-#     user_id = request.sid
-#     connected_users.add(user_id)
-#     socketio.server.enter_room(user_id, user_id)
-
-#     print("Client connected")
-
-# @socketio.on('disconnect')
-# def disconnect():
-#     global client_connected
-#     client_connected = False
-#     global active_connections
-#     active_connections -= 1
-
-#     user_id = request.sid
-#     if user_id in connected_users:  # Check if the user_id is in the set of connected users
-#         connected_users.remove(user_id)  # Remove the user_id from the set of connected users
-#     socketio.server.leave_room(request.sid, user_id)
-
-#     print("Client disconnected")
-
 @socketio.on('user_connected')
 def user_connected(data):
     global client_connected
@@ -124,11 +95,6 @@ def disconnect():
 
     print("User disconnected with ID: ", user_id)
 
-# @socketio.on('get_sid')
-# def send_sid():
-#     # when 'get_sid' event is received, respond with 'your_sid' event that includes the sid
-#     socketio.emit('your_sid', {'sid': request.sid}, room=request.sid)
-
 @socketio.on('cancel_processing')
 def handle_cancel_processing(data):
     clip_name = data['clipName']
@@ -137,23 +103,10 @@ def handle_cancel_processing(data):
     socketio.emit('video_processing_progress', {'progress': 0}, room=socket_id)
     cancel_processing(clip_name, socketio, socket_id)
 
-import os
-import tempfile
-
-import subprocess
-
 @application.route('/')
-def ffmpeg_test():
-    try:
-        result = subprocess.run(["ffmpeg", "-version"], capture_output=True, text=True)
-        return jsonify({"ffmpeg_output": result.stdout})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-# def hello_world():
-#     # print(sys.path)
-#     return 'Backend is running!'
-
-import pandas as pd
+def hello_world():
+    print(sys.path)
+    return 'Backend is running!'
 
 @application.route('/issues', methods=['POST', 'GET'])
 def submit_issue():
@@ -201,91 +154,47 @@ def generate_presigned_url():
     presigned_url = create_presigned_url('video-file-uploads', unique_filename)
     return jsonify({'presigned_url': presigned_url, 'fileName': unique_filename})
 
+def send_progress_update(socketio, progress, socket_id):
+    socketio.emit('video_processing_progress', {'progress': progress}, room=socket_id)
+
 @application.route('/trim', methods=['POST'])
 def trim_video():
     print("trim hit")
     try:
-        # temp_dir_path = os.path.join(os.getcwd(), 'tempdir')
-        # os.makedirs(temp_dir_path, exist_ok=True)
+        socket_id = request.form.get('user_id')
+        print(connected_users)
+        print(socket_id)
+        if socket_id not in connected_users:
+            return jsonify({'success': False, 'message': 'Invalid user ID. Please ensure you are connected.'}), 400
 
-        # with tempfile.TemporaryDirectory(dir=temp_dir_path) as tempdir:
-        with tempfile.TemporaryDirectory() as tempdir:
-            # print("Temporary directory path is:", tempdir)
+        clip_info = {key: value for key, value in request.form.items() if not key.startswith(('start-time-', 'end-time-'))}
+        music_file = request.files.get('music-file')
+        clip_info['music_file_path'] = music_file
+        watermark_file = request.files.get('watermark-file')
+        clip_info['watermark_file_path'] = watermark_file
 
-            # video_file = request.files.get('video-file')
+        # Get all keys in the form data that start with 'start-time-'
+        start_time_keys = [key for key in request.form.keys() if key.startswith('start-time-')]
 
-            video_file_name = request.form.get('video-file')
+        # Loop over the start time keys and extract the corresponding start and end times
+        payload = []
+        socketio.emit('build_action', {'action': 'Building'}, room=socket_id)
+        for index, start_time_key in enumerate(start_time_keys):
+            clip_number = start_time_key.split('-')[-1]
+            start_time = request.form.get(start_time_key)
+            end_time = request.form.get(f'end-time-{clip_number}')
+            payload.append({
+                "video-file-name": request.files.get('video-file'),
+                "clip-id": clip_number, 
+                "clip-info": clip_info,
+                "start-time": start_time,
+                "end-time": end_time
+            })
 
-            # # Extract user_id from the POST data
-            # socket_id = request.form.get('user_id')
+        #send clips to StepFunction
+        arn = start_step_function("arn:aws:states:us-east-2:328963664440:stateMachine:PcbClipBuilderStateMachine", payload)
 
-            # if socket_id not in connected_users:
-            #     return jsonify({'success': False, 'message': 'Invalid user ID. Please ensure you are connected.'}), 400
-
-            socket_id = request.form.get('user_id')
-            print(connected_users)
-            print(socket_id)
-            if socket_id not in connected_users:
-                return jsonify({'success': False, 'message': 'Invalid user ID. Please ensure you are connected.'}), 400
-
-
-            # try:
-            #     socketio.emit('build_action', {'action': 'Retrieving'})
-            # except Exception as e:
-            #     print(f"Error while emitting: {e}")
-
-            downloaded_video_file_path = retreive_video_file(video_file_name, tempdir)
-            
-            with open(downloaded_video_file_path, 'rb') as fp:
-                video_file = FileStorage(fp, filename=video_file_name)
-
-                is_safe, message = safe_video_file(video_file, 5000)  # 5000 is the maximum allowed file size in megabytes
-                if not is_safe:
-                    return jsonify({'success': False, 'message': message})
-
-                temp_file = os.path.join(tempdir, 'temp.mp4')
-                video_file.save(temp_file)
-                
-                # Convert request.form into a regular dictionary, excluding start and end time data
-                clip_info = {key: value for key, value in request.form.items() if not key.startswith(('start-time-', 'end-time-'))}
-
-                music_file = request.files.get('music-file')
-                if music_file:
-                    is_safe, message = safe_music_file(music_file, 200)
-                    if not is_safe:
-                        return jsonify({'success': False, 'message': message})
-                    
-                    music_temp_file = os.path.join(tempdir, 'temp_music.mp3')
-                    music_file.save(music_temp_file)
-                    clip_info['music_file_path'] = music_temp_file
-
-
-                watermark_file = request.files.get('watermark-file')
-                if watermark_file:
-                    is_safe, message = safe_watermark_file(watermark_file, 20)
-                    if not is_safe:
-                        return jsonify({'success': False, 'message': message})
-                    watermark_temp_file = os.path.join(tempdir, 'temp_watermark.png')
-                    watermark_file.save(watermark_temp_file)
-                    clip_info['watermark_file_path'] = watermark_temp_file
-
-                # Get all keys in the form data that start with 'start-time-'
-                start_time_keys = [key for key in request.form.keys() if key.startswith('start-time-')]
-
-                # Loop over the start time keys and extract the corresponding start and end times
-                for index, start_time_key in enumerate(start_time_keys):
-                    global active_connections
-                    print(active_connections)
-                    clip_number = start_time_key.split('-')[-1]
-                    start_time = request.form.get(start_time_key)
-                    end_time = request.form.get(f'end-time-{clip_number}')
-                    socketio.emit('build_action', {'action': 'Building'}, room=socket_id)
-                    # print(clip_info)
-                    build_clip(tempdir, temp_file, start_time, end_time, clip_number, socketio, clip_info, socket_id)
-
-                global clip_cancel_flags
-                clip_cancel_flags.clear()
-                return jsonify({'success': True, 'message': '/trim completed all clips'})
+        return jsonify({'success': True, 'message': '/trim started', 'arn': arn})
 
     except ValueError as e:
         # This will catch errors related to the request data

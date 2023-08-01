@@ -1,4 +1,5 @@
 import os
+import json
 from moviepy.editor import *
 import uuid
 from werkzeug.datastructures import FileStorage
@@ -10,7 +11,7 @@ from functions.add_subtitles import add_subtitles
 
 TMPDIR = "/tmp"
 
-def lambda_handler(event, context):
+def lambda_handler():
     """
     Process clip for a video
 
@@ -23,6 +24,8 @@ def lambda_handler(event, context):
         music-file: optional str s3 URL of file
         watermark-file: optional str s3 URL of file
     """
+    event = json.loads(os.environ.get("INPUT_PAYLOAD", "{}"))
+
     downloaded_video_file_path = retreive_video_file(event["video-file-name"], TMPDIR)
     if not downloaded_video_file_path:
         return {'statusCode': 400, 'body': {'success': False}}
@@ -34,11 +37,11 @@ def lambda_handler(event, context):
         if not is_safe:
             return {'statusCode': 400, 'body': {'success': False, 'message': message}}
 
-    music_file = event.get('music-file')
+    music_file = event.get('clip-info', {}).get('music-file')
     #music_temp_file = os.path.join(TMPDIR, 'temp_music.mp3')
     #music_file.save(music_temp_file)
 
-    watermark_file = event.get('watermark-file')
+    watermark_file = event.get('clip-info', {}).get('watermark-file')
     #watermark_temp_file = os.path.join(TMPDIR, 'temp_watermark.png')
     #watermark_file.save(watermark_temp_file)
             
@@ -60,6 +63,7 @@ def lambda_handler(event, context):
         event["clip-id"],
         event["clip-info"]
     )
+    return success
 
 
 def convert_to_seconds(timestamp):
@@ -182,8 +186,8 @@ def build_clip(
     return True
 
 if __name__ == "__main__":
-    lambda_handler({
-        "video-file-name": "Na Pali 2022.mp4",
+    payload = {
+        "video-file-name": "s3://video-file-uploads-test/Na Pali 2022.mp4",
         "clip-id": "1", 
         "clip-info": {
             "subtitlesToggle": True
@@ -192,4 +196,7 @@ if __name__ == "__main__":
         "end-time": "00:02:00",
         "music-file": "",
         "watermark-file": ""
-    }, None)
+    }
+
+    os.environ["INPUT_PAYLOAD"] = json.dumps(payload)
+    lambda_handler()

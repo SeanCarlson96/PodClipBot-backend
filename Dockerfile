@@ -24,4 +24,4 @@ RUN python util/download_whisperx_model.py
 RUN apt remove -y gcc
 
 # Set the handler for the Lambda function
-CMD ["python", "functions.build_clip_lambda.lambda_handler"]
+CMD ["python", "functions.build_clip_v2.lambda_handler"]

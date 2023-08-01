@@ -1,22 +1,14 @@
-# import glob
 import os
-# import pprint
-# import traceback
 import whisperx
-# import gc 
 from moviepy.editor import TextClip
 from moviepy.editor import *
 from moviepy.video.tools.subtitles import SubtitlesClip
 from moviepy.video.compositing.CompositeVideoClip import CompositeVideoClip
 from functions.fill_missing_times import fill_missing_times
 from functions.srt_format_timestamp import srt_format_timestamp
-# from diarized_subtitles import diarized_subtitles
 from functions.diarized_subtitles2 import diarized_subtitles
 from functions.adjust_word_timestamps import adjust_word_timestamps
 from functions.profanity_filter import check_profanity
-
-def send_progress_update(socketio, progress, socket_id):
-    socketio.emit('video_processing_progress', {'progress': progress}, room=socket_id)
 
 def add_subtitles(tempdir, video, audio_filename, clip_info):
 

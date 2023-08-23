@@ -1,5 +1,5 @@
 import os
-import json
+import simplejson as json
 from moviepy.editor import *
 import uuid
 from werkzeug.datastructures import FileStorage
@@ -25,6 +25,7 @@ def lambda_handler():
         watermark-file: optional str s3 URL of file
     """
     event = json.loads(os.environ.get("INPUT_PAYLOAD", "{}"))
+    print(event)
 
     downloaded_video_file_path = retreive_video_file(event["video-file-name"], TMPDIR)
     if not downloaded_video_file_path:
@@ -186,17 +187,4 @@ def build_clip(
     return True
 
 if __name__ == "__main__":
-    payload = {
-        "video-file-name": "s3://video-file-uploads-test/Na Pali 2022.mp4",
-        "clip-id": "1", 
-        "clip-info": {
-            "subtitlesToggle": True
-        },
-        "start-time": "00:01:00",
-        "end-time": "00:02:00",
-        "music-file": "",
-        "watermark-file": ""
-    }
-
-    os.environ["INPUT_PAYLOAD"] = json.dumps(payload)
     lambda_handler()

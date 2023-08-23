@@ -25,7 +25,24 @@
     aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 328963664440.dkr.ecr.us-east-2.amazonaws.com
     docker push 328963664440.dkr.ecr.us-east-2.amazonaws.com/pcb-clipper:latest
 
-## Running Serverless Clip Builder
+## SQS: Running Serverless Clip Builder
+Example payload to send to https://us-east-2.console.aws.amazon.com/sqs/v2/home?region=us-east-2#/queues/https%3A%2F%2Fsqs.us-east-2.amazonaws.com%2F328963664440%2FPCBClipProcessingQueue/send-receive
+
+    {
+        "video-file-name": "s3://video-file-uploads-test/Na Pali 2022.mp4",
+        "clip-id": "1", 
+        "clip-info": {
+            "subtitlesToggle": True
+        },
+        "start-time": "00:01:00",
+        "end-time": "00:02:00",
+        "music-file": "",
+        "watermark-file": ""
+    }
+
+    #os.environ["INPUT_PAYLOAD"] = json.dumps(payload)
+
+## Stepfunction (deprecated): Running Serverless Clip Builder
 
 ```
     from util.stepfunction import start_step_function
@@ -35,3 +52,4 @@
 Example payload from step function UI:
 
 ["{\"video-file-name\": \"s3://video-file-uploads-test/testvid.mp4\", \"clip-id\": \"1\", \"clip-info\": {\"subtitlesToggle\": true}, \"start-time\": \"00:01:00\", \"end-time\": \"00:02:00\", \"music-file\": \"\", \"watermark-file\": \"\"}"]
+

@@ -25,7 +25,7 @@ def lambda_handler(event, context):
                 'name': 'pcb-clipper',
                 'environment': [
                     {
-                        'name': 'PAYLOAD',
+                        'name': 'INPUT_PAYLOAD',
                         'value': json.dumps(record["body"])
                     }
                 ]
@@ -40,6 +40,7 @@ def lambda_handler(event, context):
             launchType='FARGATE',
             networkConfiguration=network_configuration
         )
+        print(response)
     
     return {
         'statusCode': 200,

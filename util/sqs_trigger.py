@@ -3,7 +3,7 @@ import json
 
 def lambda_handler(event, context):
     # Get the Fargate task definition and cluster ARNs
-    task_definition = "arn:aws:ecs:us-east-2:328963664440:task-definition/pcb-clipper-task:1"
+    task_definition = "arn:aws:ecs:us-east-2:328963664440:task-definition/pcb-clipper-task:3"
     cluster = "pod-clip-bot"
     
     network_configuration = {
@@ -26,7 +26,7 @@ def lambda_handler(event, context):
                 'environment': [
                     {
                         'name': 'INPUT_PAYLOAD',
-                        'value': json.dumps(record["body"])
+                        'value': record["body"]
                     }
                 ]
             }

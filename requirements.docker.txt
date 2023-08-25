@@ -4,3 +4,4 @@ Werkzeug
 boto3
 botocore
 python-magic
+torchvision

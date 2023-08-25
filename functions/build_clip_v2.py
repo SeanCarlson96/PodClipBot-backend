@@ -24,25 +24,27 @@ def lambda_handler():
         music-file: optional str s3 URL of file
         watermark-file: optional str s3 URL of file
     """
-    event = json.loads(os.environ.get("INPUT_PAYLOAD", "{}"))
-    print(event)
+    payload = json.loads(os.environ.get("INPUT_PAYLOAD", "{}"))
+    print(payload)
 
-    downloaded_video_file_path = retreive_video_file(event["video-file-name"], TMPDIR)
+    downloaded_video_file_path = retreive_video_file(payload["video-file-name"], TMPDIR)
+    print(downloaded_video_file_path)
     if not downloaded_video_file_path:
         return {'statusCode': 400, 'body': {'success': False}}
 
     with open(downloaded_video_file_path, 'rb') as fp:
-        video_file = FileStorage(fp, filename=event["video-file-name"])
+        video_file = FileStorage(fp, filename=downloaded_video_file_path)
 
         is_safe, message = safe_video_file(video_file, 5000)  # 5000 is the maximum allowed file size in megabytes
         if not is_safe:
+            print("video is not safe")
             return {'statusCode': 400, 'body': {'success': False, 'message': message}}
 
-    music_file = event.get('clip-info', {}).get('music-file')
+    music_file = payload.get('clip-info', {}).get('music-file')
     #music_temp_file = os.path.join(TMPDIR, 'temp_music.mp3')
     #music_file.save(music_temp_file)
 
-    watermark_file = event.get('clip-info', {}).get('watermark-file')
+    watermark_file = payload.get('clip-info', {}).get('watermark-file')
     #watermark_temp_file = os.path.join(TMPDIR, 'temp_watermark.png')
     #watermark_file.save(watermark_temp_file)
             
@@ -59,10 +61,10 @@ def lambda_handler():
 
     success = build_clip(
         downloaded_video_file_path, 
-        event["start-time"], 
-        event["end-time"], 
-        event["clip-id"],
-        event["clip-info"]
+        payload["start-time"], 
+        payload["end-time"], 
+        payload["clip-id"],
+        payload["clip-info"]
     )
     return success
 
@@ -91,12 +93,14 @@ def build_clip(
     print(start_time, end_time)
 
     # Extract the audio from the video
+    print("extracting audio")
     audio = video.audio
     audio_filename = os.path.join(TMPDIR, os.path.splitext(video.filename)[0] + '.wav')
     audio.write_audiofile(audio_filename)
 
     if clip_info.get("subtitlesToggle"):
         # Use whisperx to create subtitles, and add them to the video
+        print("adding subtitles")
         video = add_subtitles(TMPDIR, video, audio_filename, clip_info)
     
     #TODO

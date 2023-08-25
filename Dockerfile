@@ -12,11 +12,12 @@ RUN apt update && apt install -y git gcc libmagic-dev ffmpeg
 COPY functions functions
 COPY util util
 COPY file_security_functions file_security_functions
+COPY whisperx whisperx
 
 # Install Python dependencies
 COPY requirements.docker.txt .
 RUN pip install -r requirements.docker.txt
-RUN pip install git+https://github.com/m-bain/whisperx.git
+RUN cd whisperx && pip install -e .
 
 # Cache WhisperX Model
 RUN python util/download_whisperx_model.py

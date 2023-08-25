@@ -16,12 +16,18 @@ def retreive_video_file(video_name, destination_dir):
     try:
         print("Retrieving video file from S3 bucket")
         print("Video name: ", video_name)
-        local_file_path = os.path.join(destination_dir, video_name)
-        transfer.download_file('video-file-uploads', video_name, local_file_path, callback=progress_callback)
+        directory_path = destination_dir + "/" + "/".join(video_name.split("/")[:-1])
+
+        if not os.path.exists(directory_path):
+            # Create the directory
+            os.makedirs(directory_path)
+            print(f"Directory '{directory_path}' created successfully.")
+
+        transfer.download_file('video-file-uploads', video_name, directory_path, callback=progress_callback)
+        return directory_path  # return the full path, not just the filename
     except NoCredentialsError:
         print("No AWS credentials were found.")
         return None
-    return local_file_path  # return the full path, not just the filename
 
 def upload_video_file(video_name: str, destination_dir: str):
     """Upload video file to S3 bucket"""

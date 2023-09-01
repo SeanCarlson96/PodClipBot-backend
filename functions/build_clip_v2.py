@@ -33,7 +33,7 @@ def lambda_handler():
         return {'statusCode': 400, 'body': {'success': False}}
 
     with open(downloaded_video_file_path, 'rb') as fp:
-        video_file = FileStorage(fp, filename=downloaded_video_file_path)
+        video_file = FileStorage(fp, filename=downloaded_video_file_path.split("/")[-1])
 
         is_safe, message = safe_video_file(video_file, 5000)  # 5000 is the maximum allowed file size in megabytes
         if not is_safe:
@@ -89,13 +89,14 @@ def build_clip(
 
     # Center and crop to 9:16
     video = center_and_crop(video)
+    video_name = os.path.splitext(video.filename)[0]
 
     print(start_time, end_time)
 
     # Extract the audio from the video
     print("extracting audio")
     audio = video.audio
-    audio_filename = os.path.join(TMPDIR, os.path.splitext(video.filename)[0] + '.wav')
+    audio_filename = os.path.join(TMPDIR, video_name + '.wav')
     audio.write_audiofile(audio_filename)
 
     if clip_info.get("subtitlesToggle"):
@@ -182,7 +183,8 @@ def build_clip(
         )
 
         #upload clip to S3
-        upload_video_file(trimmed_file, os.path.splitext(video.filename)[0] + "/")
+        print(os.path.join(TMPDIR, trimmed_file))
+        upload_video_file(os.path.join(TMPDIR, trimmed_file), video_name + "/")
 
     except Exception as e:
         print(e)
@@ -191,4 +193,7 @@ def build_clip(
     return True
 
 if __name__ == "__main__":
-    lambda_handler()
+    #upload_video_file("/tmp/clip1_17876067-41fd-4dbb-9880-53dc9ad15d30.mp4", "iasip")
+    #os.environ.setdefault("INPUT_PAYLOAD", '{"video-file-name": "test/iasip.mp4", "clip-id": "1", "clip-info": {"subtitlesToggle": true},"start-time": "00:00:00","end-time": "00:00:56","music-file": "","watermark-file": ""}')
+    r = lambda_handler()
+    print(r)

@@ -23,8 +23,9 @@ def retreive_video_file(video_name, destination_dir):
             os.makedirs(directory_path)
             print(f"Directory '{directory_path}' created successfully.")
 
-        transfer.download_file('video-file-uploads', video_name, directory_path, callback=progress_callback)
-        return directory_path  # return the full path, not just the filename
+        file_path = directory_path + "/" + video_name.split("/")[-1]
+        transfer.download_file('video-file-uploads', video_name, file_path, callback=progress_callback)
+        return file_path  # return the full path, not just the filename
     except NoCredentialsError:
         print("No AWS credentials were found.")
         return None
@@ -34,9 +35,12 @@ def upload_video_file(video_name: str, destination_dir: str):
     s3 = boto3.client('s3')
     transfer_config = TransferConfig(use_threads=False)
     transfer = S3Transfer(s3, transfer_config)
+    
     try:
-        print("Video name: ", video_name)
-        transfer.upload_file(video_name, 'video-file-uploads', destination_dir, callback=progress_callback)
+        video_file_name = os.path.basename(video_name)  # Extract the file name
+        print("Uploading video:", video_file_name)
+        remote_path = os.path.join(destination_dir, video_file_name)
+        transfer.upload_file(video_name, 'video-file-uploads', remote_path, callback=progress_callback)
     except NoCredentialsError:
         print("No AWS credentials were found.")
 

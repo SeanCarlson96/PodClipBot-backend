@@ -194,6 +194,6 @@ def build_clip(
 
 if __name__ == "__main__":
     #upload_video_file("/tmp/clip1_17876067-41fd-4dbb-9880-53dc9ad15d30.mp4", "iasip")
-    #os.environ.setdefault("INPUT_PAYLOAD", '{"video-file-name": "test/iasip.mp4", "clip-id": "1", "clip-info": {"subtitlesToggle": true},"start-time": "00:00:00","end-time": "00:00:56","music-file": "","watermark-file": ""}')
+    os.environ.setdefault("INPUT_PAYLOAD", '{"video-file-name": "test/iasip.mp4", "clip-id": "1", "clip-info": {"subtitlesToggle": true},"start-time": "00:00:00","end-time": "00:00:56","music-file": "","watermark-file": ""}')
     r = lambda_handler()
     print(r)

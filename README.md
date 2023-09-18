@@ -25,7 +25,7 @@
     aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 328963664440.dkr.ecr.us-east-2.amazonaws.com
     docker push 328963664440.dkr.ecr.us-east-2.amazonaws.com/pcb-clipper:latest
 
-    docker run -it --rm -e INPUT_PAYLOAD='{"video-file-name": "iasip.mp4", "clip-id": "1", "clip-info": {"subtitlesToggle": true},"start-time": "00:00:00","end-time": "00:01:00","music-file": "","watermark-file": ""}' pcb-clipper
+    docker run -it --rm -e INPUT_PAYLOAD='{"video-file-name": "test/iasip.mp4", "clip-id": "1", "clip-info": {"subtitlesToggle": true},"start-time": "00:00:00","end-time": "00:00:56","music-file": "","watermark-file": ""}' pcb-clipper
 
 ## SQS: Running Serverless Clip Builder
 Example payload to send to https://us-east-2.console.aws.amazon.com/sqs/v2/home?region=us-east-2#/queues/https%3A%2F%2Fsqs.us-east-2.amazonaws.com%2F328963664440%2FPCBClipProcessingQueue/send-receive

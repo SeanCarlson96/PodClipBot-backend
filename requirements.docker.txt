@@ -1,7 +1,11 @@
+Pillow==9.5.0
 simplejson
-moviepy
+moviepy==1.0.3
 Werkzeug
 boto3
 botocore
-python-magic
-torchvision
+python-magic==0.4.27
+torchvision==0.15.1
+imageio==2.31.0
+imageio-ffmpeg==0.4.8
+ffmpeg-python==0.2.0

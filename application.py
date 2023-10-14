@@ -204,6 +204,10 @@ def generate_presigned_url():
 @application.route('/trim', methods=['POST'])
 def trim_video():
     print("trim hit")
+
+    # Send a message to inform front end that the server is under maintenance
+    return jsonify({'success': False, 'message': 'The server is under maintenance.'}), 400
+    
     try:
         # temp_dir_path = os.path.join(os.getcwd(), 'tempdir')
         # os.makedirs(temp_dir_path, exist_ok=True)

@@ -206,7 +206,8 @@ def trim_video():
     print("trim hit")
 
     # Send a message to inform front end that the server is under maintenance
-        # when moving back to live site, the file 01_install_torch.config may need to move back to the .ebextensions folder
+        # when moving back to live site, 
+        #       the files 01_install_torch.config, and 05_install_git_and_whisperx.config may need to move back to the .ebextensions folder
     return jsonify({'success': False, 'message': 'The server is under maintenance.'}), 400
     
     try:
